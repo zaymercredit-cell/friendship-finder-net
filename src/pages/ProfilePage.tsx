@@ -476,10 +476,9 @@ export default function ProfilePage() {
           <StorySection icon={ImageIcon} title="Фотографии">
             <div className="grid grid-cols-3 gap-1.5 rounded-xl overflow-hidden">
               {galleryImages.slice(0, 6).map((img, i) => (
-                <div key={i} className={`relative overflow-hidden cursor-pointer group ${i === 0 ? "col-span-2 row-span-2" : ""}`}
+                <div key={i} className={`relative overflow-hidden cursor-pointer ${i === 0 ? "col-span-2 row-span-2" : ""}`}
                   onClick={() => { setLightboxIndex(i); setLightboxOpen(true); }}>
-                  <img src={img} alt="" className={`w-full object-cover transition-transform duration-500 group-hover:scale-110 ${i === 0 ? "aspect-square" : "aspect-square"}`} loading="lazy" />
-                  <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors" />
+                  <img src={img} alt="" className="w-full aspect-square object-cover" loading="lazy" />
                 </div>
               ))}
             </div>
