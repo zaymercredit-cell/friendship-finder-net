@@ -367,7 +367,7 @@ export default function DiscoverPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                   </div>
                   <div className="absolute top-2 left-2 flex items-center gap-1 bg-destructive/90 text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                    <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
                     LIVE
                   </div>
                   <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-md">
