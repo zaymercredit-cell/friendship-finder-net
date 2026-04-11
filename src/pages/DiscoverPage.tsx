@@ -475,11 +475,11 @@ export default function DiscoverPage() {
             {filteredUsers.slice(6, 10).map(({ user, score }) => (
               <div
                 key={user.id + "-mood"}
-                className="premium-card p-3 cursor-pointer group"
+                className="premium-card p-3 cursor-pointer"
                 onClick={() => navigate(`/profile/${user.username}`)}
               >
                 <div className="flex items-center gap-2.5 mb-2">
-                  <Avatar className="h-10 w-10 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all">
+                  <Avatar className="h-10 w-10">
                     <AvatarImage src={user.avatar} className="object-cover" />
                     <AvatarFallback>{user.name[0]}</AvatarFallback>
                   </Avatar>
@@ -488,7 +488,7 @@ export default function DiscoverPage() {
                     <p className="text-[10px] text-muted-foreground">{user.city}</p>
                   </div>
                 </div>
-                <MoodBadge mood={["chatty", "walk", "open", "coffee"][Math.floor(Math.random() * 4)]} compact />
+                <MoodBadge mood={["chatty", "walk", "open", "coffee"][parseInt(user.id) % 4]} compact />
                 <div className="flex items-center gap-1 mt-2">
                   <Sparkles className="h-3 w-3 text-primary" />
                   <span className="text-[11px] font-medium text-primary">{score}% совместимость</span>
