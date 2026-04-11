@@ -58,7 +58,7 @@ function OnlineIndicator({ isOnline, lastSeen, size = "md" }: { isOnline: boolea
   if (isOnline) {
     return (
       <span className={`inline-flex items-center gap-1.5 font-medium text-green-500 ${size === "sm" ? "text-[11px]" : "text-[13px]"}`}>
-        <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />онлайн
+        <span className="h-2 w-2 rounded-full bg-green-500" />онлайн
       </span>
     );
   }
@@ -69,7 +69,7 @@ function StorySection({ icon: Icon, title, children, className = "", accent = fa
   icon?: any; title: string; children: React.ReactNode; className?: string; accent?: boolean;
 }) {
   return (
-    <div className={`rounded-2xl border border-border/40 p-5 md:p-6 transition-all duration-300 hover:shadow-[var(--shadow-md)] ${accent ? "bg-gradient-to-br from-primary/[0.03] via-card to-accent/[0.02]" : "bg-card"} ${className}`}>
+    <div className={`rounded-2xl border border-border/40 p-5 md:p-6 ${accent ? "bg-card" : "bg-card"} ${className}`}>
       <div className="flex items-center gap-2.5 mb-4">
         {Icon && (
           <div className="h-8 w-8 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
@@ -301,14 +301,14 @@ export default function ProfilePage() {
   return (
     <div className="max-w-3xl mx-auto pb-10">
       {/* ═══════════ HERO ═══════════ */}
-      <div className="relative rounded-2xl overflow-hidden shadow-[var(--shadow-lg)]">
+      <div className="relative rounded-2xl overflow-hidden card-shadow">
         {/* Cover — taller, more immersive */}
         <div className="h-64 md:h-80 bg-cover bg-center relative" style={dp.cover ? { backgroundImage: `url(${dp.cover})` } : undefined}>
           {!dp.cover && <div className="absolute inset-0 bg-[var(--gradient-hero)]" />}
           <div className="absolute inset-0 bg-gradient-to-t from-card via-card/30 to-transparent" />
           {isOwnProfile && (
             <ImageUploadButton onFileSelect={(f) => { coverUpload.selectFile(f); setCoverDialogOpen(true); }}
-              className="absolute top-4 right-4 text-[12px] gap-1.5 bg-card/60 backdrop-blur-xl hover:bg-card/80 border border-white/10 rounded-full text-foreground" variant="ghost" size="sm">
+              className="absolute top-4 right-4 text-[12px] gap-1.5 bg-card/80 hover:bg-card border border-border/40 rounded-full text-foreground" variant="ghost" size="sm">
               <Camera className="h-3.5 w-3.5" />Обложка
             </ImageUploadButton>
           )}
@@ -319,7 +319,7 @@ export default function ProfilePage() {
           <div className="flex items-end gap-5">
             {/* Avatar — large, premium ring */}
             <div className="relative group shrink-0">
-              <div className="ring-[5px] ring-card rounded-full shadow-[var(--shadow-xl)]">
+              <div className="ring-[5px] ring-card rounded-full card-shadow">
                 <Avatar className="h-32 w-32 md:h-36 md:w-36 border-2 border-primary/20">
                   <AvatarImage src={dp.avatar} alt={dp.name} className="object-cover" />
                   <AvatarFallback className="text-4xl font-bold bg-secondary text-foreground">{dp.name[0]}</AvatarFallback>
@@ -357,7 +357,7 @@ export default function ProfilePage() {
                 <OnlineIndicator isOnline={dp.isOnline} lastSeen={dp.lastSeen} />
               </div>
               {dp.statusText && (
-                <p className="text-[13px] text-foreground/60 mt-2 italic bg-card/40 backdrop-blur-sm rounded-lg px-3 py-1.5 inline-block">"{dp.statusText}"</p>
+                <p className="text-[13px] text-foreground/60 mt-2 italic bg-secondary/40 rounded-lg px-3 py-1.5 inline-block">"{dp.statusText}"</p>
               )}
             </div>
           </div>
