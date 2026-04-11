@@ -94,12 +94,6 @@ function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onC
           <p className="text-[12px] text-muted-foreground line-clamp-2 leading-snug">{user.about}</p>
         )}
         
-        {/* Common interests highlight */}
-        {(() => {
-          const common = user.interests.filter(i => currentUser.interests.includes(i));
-          return common.length > 0 ? <InterestMatchBadge commonInterests={common} /> : null;
-        })()}
-        
         <div className="flex flex-wrap gap-1">
           {user.interests.slice(0, 3).map(tag => {
             const isCommon = currentUser.interests.includes(tag);
@@ -112,16 +106,12 @@ function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onC
           )}
         </div>
         
-        {/* Chemistry + conversation indicators */}
-        <div className="flex items-center gap-2">
-          {convScore >= 60 && <ConversationPotential score={convScore} compact />}
-          {user.communicationGoals && user.communicationGoals.length > 0 && (
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <Target className="h-2.5 w-2.5 text-primary/50" />
-              {user.communicationGoals[0]}
-            </span>
-          )}
-        </div>
+        {user.communicationGoals && user.communicationGoals.length > 0 && (
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Target className="h-2.5 w-2.5 text-primary/50" />
+            {user.communicationGoals[0]}
+          </span>
+        )}
 
         <div className="flex items-center gap-1.5 pt-1">
           <Button size="sm" className="flex-1 gap-1 text-[12px] h-9 rounded-xl font-semibold" onClick={onLike}>
