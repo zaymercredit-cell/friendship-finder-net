@@ -153,4 +153,4 @@ export default memo(function PostCard(props: PostCardProps) {
       </div>
     </article>
   );
-}
+});
