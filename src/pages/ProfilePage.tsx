@@ -440,7 +440,7 @@ export default function ProfilePage() {
           <StorySection icon={Sparkles} title="Интересы">
             <div className="flex flex-wrap gap-2">
               {dp.interests.map(tag => (
-                <span key={tag} className="text-[13px] bg-primary/8 text-primary border border-primary/12 px-4 py-2 rounded-full font-medium transition-all hover:bg-primary/15 hover:scale-105 cursor-default">{tag}</span>
+                <span key={tag} className="text-[13px] bg-primary/8 text-primary border border-primary/12 px-4 py-2 rounded-full font-medium cursor-default">{tag}</span>
               ))}
             </div>
           </StorySection>
