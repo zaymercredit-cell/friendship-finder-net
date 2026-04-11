@@ -8,14 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Heart, X as XIcon, MessageCircle, MapPin, Circle,
-  SlidersHorizontal, Sparkles, ChevronRight, Target, Zap, Users, Clock, Brain, Navigation, Star, Crown,
-  TrendingUp, Flame, Eye, Coffee, Music, Smile, Sun, Radio
+  Heart, MessageCircle, MapPin,
+  SlidersHorizontal, Sparkles, Target, Users, Brain, Navigation, Star,
+  TrendingUp, Flame, Eye, Coffee, Smile, Sun, Radio
 } from "lucide-react";
 import MoodBadge from "@/components/MoodBadge";
 import CommunityMatchingSection from "@/components/discover/CommunityMatchingSection";
-import ConversationPotential from "@/components/ConversationPotential";
-import InterestMatchBadge from "@/components/InterestMatchBadge";
+import { Link, useNavigate } from "react-router-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
