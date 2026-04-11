@@ -562,7 +562,7 @@ export default function DiscoverPage() {
       {/* ═══ NEW USERS ═══ */}
       {newUsers.length > 0 && (
         <div>
-          <SectionHeader icon={Zap} title="Новые пользователи" badge="New" />
+          <SectionHeader icon={Sparkles} title="Новые пользователи" badge="New" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {newUsers.slice(0, 3).map(({ user, score }) => (
               <DiscoverCard
