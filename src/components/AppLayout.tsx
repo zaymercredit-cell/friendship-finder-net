@@ -116,7 +116,7 @@ function GlobalSearch() {
 
   return (
     <>
-      <div className="fixed inset-0 z-[60] bg-foreground/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
+      <div className="fixed inset-0 z-[60] bg-foreground/40" onClick={() => setOpen(false)} />
       <div className="fixed top-[max(4rem,10vh)] left-1/2 -translate-x-1/2 z-[61] w-[90vw] max-w-lg bg-card rounded-xl border border-border/60 shadow-lg overflow-hidden animate-scale-in">
         <div className="flex items-center gap-2 px-4 border-b border-border/60">
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -179,7 +179,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/90 backdrop-blur-md supports-[backdrop-filter]:bg-card/80">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-card">
         <div className="mx-auto flex h-[56px] max-w-7xl items-center gap-4 px-4">
           {/* Logo */}
           <Link to="/feed" className="flex items-center gap-2.5 shrink-0">
@@ -299,7 +299,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* Mobile Bottom Navigation — Premium */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-card/95 backdrop-blur-xl safe-area-bottom">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-card safe-area-bottom">
         <div className="flex items-center justify-around h-[58px] max-w-lg mx-auto">
           {mobileItems.map((item) => {
             const active = isActive(item.url);
@@ -332,7 +332,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Search Overlay */}
       {mobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 top-14 z-40 bg-background/98 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="md:hidden fixed inset-0 top-14 z-40 bg-background p-4">
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Поиск..." className="pl-9 bg-secondary border-0 text-[14px]" autoFocus />
