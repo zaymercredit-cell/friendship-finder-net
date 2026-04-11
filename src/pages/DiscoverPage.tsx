@@ -39,9 +39,6 @@ interface DiscoverCardProps {
 
 function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onClick }: DiscoverCardProps) {
   const scoreColor = score >= 80 ? "from-success to-success" : score >= 60 ? "from-primary to-accent" : "from-muted-foreground to-muted-foreground";
-  const chemScore = Math.floor(Math.random() * 40 + 50);
-  const convScore = Math.floor(Math.random() * 40 + 45);
-  const userMood = Math.random() > 0.6 ? ["chatty", "walk", "open", "coffee", "evening"][Math.floor(Math.random() * 5)] : undefined;
 
   return (
     <div onClick={onClick} className="premium-card overflow-hidden cursor-pointer group">
