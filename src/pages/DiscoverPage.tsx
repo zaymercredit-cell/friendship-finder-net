@@ -8,14 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  Heart, X as XIcon, MessageCircle, MapPin, Circle,
-  SlidersHorizontal, Sparkles, ChevronRight, Target, Zap, Users, Clock, Brain, Navigation, Star, Crown,
-  TrendingUp, Flame, Eye, Coffee, Music, Smile, Sun, Radio
+  Heart, MessageCircle, MapPin,
+  SlidersHorizontal, Sparkles, Target, Users, Brain, Navigation, Star,
+  TrendingUp, Flame, Eye, Coffee, Smile, Sun, Radio
 } from "lucide-react";
 import MoodBadge from "@/components/MoodBadge";
 import CommunityMatchingSection from "@/components/discover/CommunityMatchingSection";
-import ConversationPotential from "@/components/ConversationPotential";
-import InterestMatchBadge from "@/components/InterestMatchBadge";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,53 +36,35 @@ interface DiscoverCardProps {
 }
 
 function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onClick }: DiscoverCardProps) {
-  const scoreColor = score >= 80 ? "from-success to-success" : score >= 60 ? "from-primary to-accent" : "from-muted-foreground to-muted-foreground";
-  const chemScore = Math.floor(Math.random() * 40 + 50);
-  const convScore = Math.floor(Math.random() * 40 + 45);
-  const userMood = Math.random() > 0.6 ? ["chatty", "walk", "open", "coffee", "evening"][Math.floor(Math.random() * 5)] : undefined;
+  const scoreColor = score >= 80 ? "bg-success" : score >= 60 ? "bg-primary" : "bg-muted-foreground";
 
   return (
-    <div onClick={onClick} className="premium-card overflow-hidden cursor-pointer group">
+    <div onClick={onClick} className="premium-card overflow-hidden cursor-pointer">
       <div className="relative aspect-[3/4] max-h-80 overflow-hidden">
         <img
           src={user.avatar}
           alt={user.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className="w-full h-full object-cover"
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-        {/* Top badges */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-          <div className="flex flex-col gap-1">
-            {user.isOnline && (
-              <div className="flex items-center gap-1.5 glass rounded-lg text-[11px] font-medium px-2.5 py-1 text-foreground">
-                <span className="h-2 w-2 rounded-full bg-success pulse-dot" />
-                онлайн
-              </div>
-            )}
-            {userMood && <MoodBadge mood={userMood} compact className="backdrop-blur-sm bg-card/60" />}
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <div className={`bg-gradient-to-r ${scoreColor} text-primary-foreground text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-elevated`}>
-              {score}%
+          {user.isOnline && (
+            <div className="flex items-center gap-1.5 bg-card/80 rounded-lg text-[11px] font-medium px-2.5 py-1 text-foreground">
+              <span className="h-2 w-2 rounded-full bg-success" />
+              онлайн
             </div>
-            {chemScore >= 70 && (
-              <div className="bg-gradient-to-r from-rose-500/90 to-pink-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
-                <Zap className="h-2.5 w-2.5" />
-                {chemScore}%
-              </div>
-            )}
+          )}
+          <div className={`${scoreColor} text-primary-foreground text-[11px] font-bold px-2.5 py-1 rounded-lg ml-auto`}>
+            {score}%
           </div>
         </div>
 
-        {/* Bottom info */}
         <div className="absolute bottom-0 inset-x-0 p-4">
-          <div className="flex items-center gap-1.5">
-            <h3 className="text-[17px] font-bold text-white leading-tight drop-shadow-sm">
-              {user.name.split(" ")[0]}, {user.age}
-            </h3>
-          </div>
+          <h3 className="text-[17px] font-bold text-white leading-tight">
+            {user.name.split(" ")[0]}, {user.age}
+          </h3>
           <p className="text-[12px] text-white/80 flex items-center gap-1 mt-0.5">
             <MapPin className="h-3 w-3" />
             {user.city}
@@ -96,12 +76,6 @@ function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onC
         {user.about && (
           <p className="text-[12px] text-muted-foreground line-clamp-2 leading-snug">{user.about}</p>
         )}
-        
-        {/* Common interests highlight */}
-        {(() => {
-          const common = user.interests.filter(i => currentUser.interests.includes(i));
-          return common.length > 0 ? <InterestMatchBadge commonInterests={common} /> : null;
-        })()}
         
         <div className="flex flex-wrap gap-1">
           {user.interests.slice(0, 3).map(tag => {
@@ -115,16 +89,12 @@ function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onC
           )}
         </div>
         
-        {/* Chemistry + conversation indicators */}
-        <div className="flex items-center gap-2">
-          {convScore >= 60 && <ConversationPotential score={convScore} compact />}
-          {user.communicationGoals && user.communicationGoals.length > 0 && (
-            <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <Target className="h-2.5 w-2.5 text-primary/50" />
-              {user.communicationGoals[0]}
-            </span>
-          )}
-        </div>
+        {user.communicationGoals && user.communicationGoals.length > 0 && (
+          <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+            <Target className="h-2.5 w-2.5 text-primary/50" />
+            {user.communicationGoals[0]}
+          </span>
+        )}
 
         <div className="flex items-center gap-1.5 pt-1">
           <Button size="sm" className="flex-1 gap-1 text-[12px] h-9 rounded-xl font-semibold" onClick={onLike}>
@@ -389,15 +359,15 @@ export default function DiscoverPage() {
               {onlineUsers.slice(0, 8).map(({ user: u, score }) => (
                 <div
                   key={u.id + "-live"}
-                  className="relative rounded-xl overflow-hidden cursor-pointer group active:scale-[0.97] transition-transform"
+                  className="relative rounded-xl overflow-hidden cursor-pointer"
                   onClick={() => navigate(`/profile/${u.username}`)}
                 >
                   <div className="aspect-[3/4] max-h-48">
-                    <img src={u.avatar} alt={u.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
+                    <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" loading="lazy" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
                   </div>
                   <div className="absolute top-2 left-2 flex items-center gap-1 bg-destructive/90 text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-md">
-                    <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-white" />
                     LIVE
                   </div>
                   <div className="absolute top-2 right-2 bg-primary/90 text-primary-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-md">
@@ -505,11 +475,11 @@ export default function DiscoverPage() {
             {filteredUsers.slice(6, 10).map(({ user, score }) => (
               <div
                 key={user.id + "-mood"}
-                className="premium-card p-3 cursor-pointer group"
+                className="premium-card p-3 cursor-pointer"
                 onClick={() => navigate(`/profile/${user.username}`)}
               >
                 <div className="flex items-center gap-2.5 mb-2">
-                  <Avatar className="h-10 w-10 ring-2 ring-primary/10 group-hover:ring-primary/30 transition-all">
+                  <Avatar className="h-10 w-10">
                     <AvatarImage src={user.avatar} className="object-cover" />
                     <AvatarFallback>{user.name[0]}</AvatarFallback>
                   </Avatar>
@@ -518,7 +488,7 @@ export default function DiscoverPage() {
                     <p className="text-[10px] text-muted-foreground">{user.city}</p>
                   </div>
                 </div>
-                <MoodBadge mood={["chatty", "walk", "open", "coffee"][Math.floor(Math.random() * 4)]} compact />
+                <MoodBadge mood={["chatty", "walk", "open", "coffee"][parseInt(user.id) % 4]} compact />
                 <div className="flex items-center gap-1 mt-2">
                   <Sparkles className="h-3 w-3 text-primary" />
                   <span className="text-[11px] font-medium text-primary">{score}% совместимость</span>
@@ -592,7 +562,7 @@ export default function DiscoverPage() {
       {/* ═══ NEW USERS ═══ */}
       {newUsers.length > 0 && (
         <div>
-          <SectionHeader icon={Zap} title="Новые пользователи" badge="New" />
+          <SectionHeader icon={Sparkles} title="Новые пользователи" badge="New" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {newUsers.slice(0, 3).map(({ user, score }) => (
               <DiscoverCard

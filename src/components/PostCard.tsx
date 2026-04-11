@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { Post } from "@/lib/mock-data";
 import type { RealPost } from "@/hooks/usePosts";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Link } from "react-router-dom";
 import PhotoGalleryLightbox from "@/components/PhotoGalleryLightbox";
 import {
@@ -24,7 +24,7 @@ const visibilityIcon = {
 // Support both mock Post and real RealPost
 type PostCardProps = { post: Post } | { realPost: RealPost };
 
-export default function PostCard(props: PostCardProps) {
+export default memo(function PostCard(props: PostCardProps) {
   const isMock = "post" in props;
   
   // Normalize data
@@ -64,7 +64,7 @@ export default function PostCard(props: PostCardProps) {
   })();
 
   return (
-    <article className="bg-card rounded-xl card-shadow border border-border/60 overflow-hidden animate-fade-in">
+    <article className="bg-card rounded-xl card-shadow border border-border/60 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 pb-3">
         <Link to={`/profile/${authorUsername}`} className="relative shrink-0">
@@ -153,4 +153,4 @@ export default function PostCard(props: PostCardProps) {
       </div>
     </article>
   );
-}
+});
