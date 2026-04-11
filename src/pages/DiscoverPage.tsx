@@ -38,50 +38,35 @@ interface DiscoverCardProps {
 }
 
 function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onClick }: DiscoverCardProps) {
-  const scoreColor = score >= 80 ? "from-success to-success" : score >= 60 ? "from-primary to-accent" : "from-muted-foreground to-muted-foreground";
+  const scoreColor = score >= 80 ? "bg-success" : score >= 60 ? "bg-primary" : "bg-muted-foreground";
 
   return (
-    <div onClick={onClick} className="premium-card overflow-hidden cursor-pointer group">
+    <div onClick={onClick} className="premium-card overflow-hidden cursor-pointer">
       <div className="relative aspect-[3/4] max-h-80 overflow-hidden">
         <img
           src={user.avatar}
           alt={user.name}
-          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className="w-full h-full object-cover"
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
-        {/* Top badges */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
-          <div className="flex flex-col gap-1">
-            {user.isOnline && (
-              <div className="flex items-center gap-1.5 glass rounded-lg text-[11px] font-medium px-2.5 py-1 text-foreground">
-                <span className="h-2 w-2 rounded-full bg-success pulse-dot" />
-                онлайн
-              </div>
-            )}
-            {userMood && <MoodBadge mood={userMood} compact className="backdrop-blur-sm bg-card/60" />}
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <div className={`bg-gradient-to-r ${scoreColor} text-primary-foreground text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-elevated`}>
-              {score}%
+          {user.isOnline && (
+            <div className="flex items-center gap-1.5 bg-card/80 rounded-lg text-[11px] font-medium px-2.5 py-1 text-foreground">
+              <span className="h-2 w-2 rounded-full bg-success" />
+              онлайн
             </div>
-            {chemScore >= 70 && (
-              <div className="bg-gradient-to-r from-rose-500/90 to-pink-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
-                <Zap className="h-2.5 w-2.5" />
-                {chemScore}%
-              </div>
-            )}
+          )}
+          <div className={`${scoreColor} text-primary-foreground text-[11px] font-bold px-2.5 py-1 rounded-lg ml-auto`}>
+            {score}%
           </div>
         </div>
 
-        {/* Bottom info */}
         <div className="absolute bottom-0 inset-x-0 p-4">
-          <div className="flex items-center gap-1.5">
-            <h3 className="text-[17px] font-bold text-white leading-tight drop-shadow-sm">
-              {user.name.split(" ")[0]}, {user.age}
-            </h3>
-          </div>
+          <h3 className="text-[17px] font-bold text-white leading-tight">
+            {user.name.split(" ")[0]}, {user.age}
+          </h3>
           <p className="text-[12px] text-white/80 flex items-center gap-1 mt-0.5">
             <MapPin className="h-3 w-3" />
             {user.city}
