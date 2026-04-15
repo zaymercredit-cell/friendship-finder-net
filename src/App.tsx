@@ -143,6 +143,7 @@ const App = () => (
 
               {/* Authenticated */}
               <Route path="/feed" element={<AuthenticatedRoute><FeedPage /></AuthenticatedRoute>} />
+              <Route path="/home" element={<AuthenticatedRoute><HomePage /></AuthenticatedRoute>} />
               <Route path="/profile/:username" element={<AuthenticatedRoute><ProfilePage /></AuthenticatedRoute>} />
               <Route path="/friends" element={<AuthenticatedRoute><FriendsPage /></AuthenticatedRoute>} />
               <Route path="/people" element={<AuthenticatedRoute><PeoplePage /></AuthenticatedRoute>} />
