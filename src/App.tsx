@@ -16,6 +16,7 @@ import AppLayout from "./components/AppLayout";
 
 // Lazy-loaded pages
 const FeedPage = lazy(() => import("./pages/FeedPage"));
+const HomePage = lazy(() => import("./pages/HomePage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const FriendsPage = lazy(() => import("./pages/FriendsPage"));
 const PeoplePage = lazy(() => import("./pages/PeoplePage"));

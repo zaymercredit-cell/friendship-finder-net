@@ -127,6 +127,19 @@ function CommunityDetailView({ communityId }: { communityId: string }) {
   const community = mockCommunities.find(c => c.id === communityId);
   const [isMember, setIsMember] = useState(false);
 
+  const communityPosts = useMemo(() => mockPosts.slice(0, 4), []);
+  const communityMembers = useMemo(() => mockUsers.slice(0, 12), []);
+  
+  const matchedMembers = useMemo(() => 
+    communityMembers
+      .map(u => ({ user: u, score: calculateMatchScore(currentUser, u) }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6),
+    [communityMembers]
+  );
+
+  const onlineMembers = useMemo(() => communityMembers.filter(u => u.isOnline), [communityMembers]);
+
   if (!community) {
     return (
       <div className="max-w-2xl mx-auto text-center py-16">
@@ -139,20 +152,6 @@ function CommunityDetailView({ communityId }: { communityId: string }) {
       </div>
     );
   }
-
-  const communityPosts = mockPosts.slice(0, 4);
-  const communityMembers = mockUsers.slice(0, 12);
-  
-  // Community Match Layer — AI-powered suggestions
-  const matchedMembers = useMemo(() => 
-    communityMembers
-      .map(u => ({ user: u, score: calculateMatchScore(currentUser, u) }))
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 6),
-    []
-  );
-
-  const onlineMembers = communityMembers.filter(u => u.isOnline);
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
