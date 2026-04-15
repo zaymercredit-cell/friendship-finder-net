@@ -1,8 +1,6 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, MapPin, Users, Check, Clock, ArrowRight, Share2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { CalendarDays, MapPin, Users, Check, Clock, ArrowRight, Share2, Sparkles, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { memo } from "react";
 
@@ -29,6 +27,12 @@ const defaultCovers = [
   "https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=600&h=300&fit=crop",
 ];
 
+function pseudoScore(id: string, base: number, range: number): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = ((hash << 5) - hash) + id.charCodeAt(i);
+  return base + (Math.abs(hash) % range);
+}
+
 interface Props {
   event: EventCardData;
   onToggleGoing?: (id: string) => void;
@@ -37,6 +41,9 @@ interface Props {
 
 export default memo(function EventCard({ event, onToggleGoing, compact }: Props) {
   const cover = event.cover || defaultCovers[parseInt(event.id.replace(/\D/g, '') || '0') % defaultCovers.length];
+  const matchPeople = pseudoScore(event.id, 2, 8);
+  const socialEnergy = pseudoScore(event.id + "en", 50, 45);
+  const isTrustedOrg = pseudoScore(event.id + "tr", 0, 10) > 5;
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -74,6 +81,22 @@ export default memo(function EventCard({ event, onToggleGoing, compact }: Props)
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
 
+        {/* Top badges */}
+        <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
+          <div className="flex flex-col gap-1">
+            {isTrustedOrg && (
+              <div className="flex items-center gap-1 bg-card/80 text-foreground text-[10px] font-medium px-2 py-0.5 rounded-full">
+                <Shield className="h-2.5 w-2.5 text-success" />Проверенный
+              </div>
+            )}
+          </div>
+          {socialEnergy >= 80 && (
+            <div className="bg-amber-500/90 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              🔥 Высокая энергия
+            </div>
+          )}
+        </div>
+
         {/* Bottom info */}
         <div className="absolute bottom-0 inset-x-0 p-4">
           <h3 className="text-[16px] font-bold text-white leading-tight">{event.title}</h3>
@@ -86,7 +109,7 @@ export default memo(function EventCard({ event, onToggleGoing, compact }: Props)
       </div>
 
       {/* Content */}
-      <div className="p-4 space-y-3">
+      <div className="p-4 space-y-2.5">
         <p className="text-[12px] text-muted-foreground line-clamp-2 leading-relaxed">{event.description}</p>
 
         {/* Tags */}
@@ -95,6 +118,14 @@ export default memo(function EventCard({ event, onToggleGoing, compact }: Props)
             <span key={tag} className="text-[10px] text-muted-foreground bg-secondary/80 px-2 py-0.5 rounded-md font-medium">{tag}</span>
           ))}
         </div>
+
+        {/* Match people hint */}
+        {matchPeople >= 3 && (
+          <div className="flex items-center gap-1.5 bg-primary/5 rounded-lg px-2.5 py-1.5">
+            <Sparkles className="h-3 w-3 text-primary" />
+            <span className="text-[10px] text-primary font-medium">{matchPeople} совместимых людей идут</span>
+          </div>
+        )}
 
         {/* Attendees row */}
         <div className="flex items-center justify-between">
