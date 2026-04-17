@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Shield, Bell, Lock, Ban, Camera, Heart, Brain } from "lucide-react";
+import { User, Shield, Bell, Lock, Ban, Camera, Heart, Brain, Crown, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -118,14 +119,16 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold text-foreground">Настройки</h1>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="w-full bg-card border border-border shadow-card rounded-lg h-10 flex-wrap">
-          <TabsTrigger value="profile" className="flex-1 text-xs gap-1.5 rounded-md"><User className="h-3.5 w-3.5" />Профиль</TabsTrigger>
-          <TabsTrigger value="dating" className="flex-1 text-xs gap-1.5 rounded-md"><Heart className="h-3.5 w-3.5" />Знакомства</TabsTrigger>
-          <TabsTrigger value="privacy" className="flex-1 text-xs gap-1.5 rounded-md"><Lock className="h-3.5 w-3.5" />Приватность</TabsTrigger>
-          <TabsTrigger value="notifications" className="flex-1 text-xs gap-1.5 rounded-md"><Bell className="h-3.5 w-3.5" />Уведомления</TabsTrigger>
-          <TabsTrigger value="security" className="flex-1 text-xs gap-1.5 rounded-md"><Shield className="h-3.5 w-3.5" />Безопасность</TabsTrigger>
-          <TabsTrigger value="blocked" className="flex-1 text-xs gap-1.5 rounded-md"><Ban className="h-3.5 w-3.5" />Чёрный список</TabsTrigger>
-          <TabsTrigger value="ai" className="flex-1 text-xs gap-1.5 rounded-md"><Brain className="h-3.5 w-3.5" />AI</TabsTrigger>
+        <TabsList className="w-full bg-card border border-border shadow-card rounded-lg h-auto flex-wrap gap-1 p-1">
+          <TabsTrigger value="profile" className="text-xs gap-1.5 rounded-md"><User className="h-3.5 w-3.5" />Профиль</TabsTrigger>
+          <TabsTrigger value="dating" className="text-xs gap-1.5 rounded-md"><Heart className="h-3.5 w-3.5" />Знакомства</TabsTrigger>
+          <TabsTrigger value="ai" className="text-xs gap-1.5 rounded-md"><Brain className="h-3.5 w-3.5" />AI</TabsTrigger>
+          <TabsTrigger value="trust" className="text-xs gap-1.5 rounded-md"><ShieldCheck className="h-3.5 w-3.5" />Доверие</TabsTrigger>
+          <TabsTrigger value="premium" className="text-xs gap-1.5 rounded-md"><Crown className="h-3.5 w-3.5" />Premium</TabsTrigger>
+          <TabsTrigger value="privacy" className="text-xs gap-1.5 rounded-md"><Lock className="h-3.5 w-3.5" />Приватность</TabsTrigger>
+          <TabsTrigger value="notifications" className="text-xs gap-1.5 rounded-md"><Bell className="h-3.5 w-3.5" />Уведомления</TabsTrigger>
+          <TabsTrigger value="security" className="text-xs gap-1.5 rounded-md"><Shield className="h-3.5 w-3.5" />Безопасность</TabsTrigger>
+          <TabsTrigger value="blocked" className="text-xs gap-1.5 rounded-md"><Ban className="h-3.5 w-3.5" />Чёрный список</TabsTrigger>
         </TabsList>
 
         <TabsContent value="profile" className="mt-4 space-y-4">
@@ -402,6 +405,79 @@ export default function SettingsPage() {
           </div>
 
           <AiAvatarSettingsBlock avatarSummary={avatarSummary} setAvatarSummary={setAvatarSummary} />
+        </TabsContent>
+
+        <TabsContent value="trust" className="mt-4 space-y-4">
+          <div className="bg-card rounded-lg border border-border shadow-card p-6 space-y-5">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-success" />
+              Доверие и безопасность
+            </h3>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="text-center p-3 rounded-lg bg-success/5 border border-success/20">
+                <p className="text-[20px] font-bold text-success">{(profile as any)?.trust_score ?? 50}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Trust Score</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <p className="text-[20px] font-bold text-primary">{profile?.is_verified ? "✓" : "—"}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">Верификация</p>
+              </div>
+              <div className="text-center p-3 rounded-lg bg-secondary border border-border">
+                <p className="text-[20px] font-bold text-foreground">100</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">AI Confidence</p>
+              </div>
+            </div>
+            {[
+              { label: "Двухфакторная аутентификация", desc: "Дополнительная защита аккаунта" },
+              { label: "Уведомления о входе", desc: "Уведомлять о новых устройствах" },
+              { label: "AI-проверка сообщений", desc: "Защита от подозрительного контента" },
+              { label: "Блокировка скриншотов", desc: "Защита приватных фото (только VIP)" },
+            ].map(item => (
+              <div key={item.label} className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+                <Switch defaultChecked={item.label.includes("AI")} />
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="premium" className="mt-4 space-y-4">
+          <div className="bg-gradient-to-br from-primary/5 via-card to-accent/5 rounded-lg border border-border shadow-card p-6 space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Crown className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  {profile?.is_vip ? "VIP активен" : "VIP подписка"}
+                  {profile?.is_vip && <Badge className="text-[10px]">Active</Badge>}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {profile?.is_vip ? "У тебя есть все премиум-функции" : "Открой все возможности платформы"}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                "Безлимитные симпатии", "Видеть кто симпатизировал",
+                "Расширенные фильтры", "Приоритет в Discover",
+                "Без рекламы", "Boost профиля 1 раз/день",
+              ].map(f => (
+                <div key={f} className="flex items-center gap-2 text-[12px] text-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                  {f}
+                </div>
+              ))}
+            </div>
+            {!profile?.is_vip && (
+              <Link to="/premium">
+                <Button className="w-full gap-2"><Crown className="h-4 w-4" />Активировать VIP</Button>
+              </Link>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
     </div>
