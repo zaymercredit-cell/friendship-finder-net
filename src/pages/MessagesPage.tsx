@@ -129,7 +129,7 @@ export default function MessagesPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-hidden">
             {isLoading ? (
               <div className="p-6 space-y-3">
                 {[...Array(5)].map((_, i) => (
@@ -143,14 +143,18 @@ export default function MessagesPage() {
                 ))}
               </div>
             ) : filteredConvs.length > 0 ? (
-              filteredConvs.map(conv => (
-                <ConversationItem
-                  key={conv.id}
-                  conv={conv}
-                  isActive={conv.id === selectedId}
-                  onClick={() => selectConv(conv.id)}
-                />
-              ))
+              <Virtuoso
+                data={filteredConvs}
+                style={{ height: "100%" }}
+                itemContent={(_, conv) => (
+                  <ConversationItem
+                    key={conv.id}
+                    conv={conv}
+                    isActive={conv.id === selectedId}
+                    onClick={() => selectConv(conv.id)}
+                  />
+                )}
+              />
             ) : (
               <EmptyConversations />
             )}
