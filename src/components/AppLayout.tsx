@@ -20,6 +20,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import AiAssistantWidget from "@/components/ai/AiAssistantWidget";
 
 const sidebarItems = [
   { title: "Главная", url: "/home", icon: Sparkles },
@@ -356,6 +357,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </nav>
         </div>
       )}
+
+      {/* Global AI Assistant */}
+      <AiAssistantWidget />
     </div>
   );
 }
