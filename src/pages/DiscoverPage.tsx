@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { VirtuosoGrid } from "react-virtuoso";
 import { mockUsers, currentUser, calculateMatchScore, allInterests, communicationGoalOptions, cities, lookingForGenderOptions } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -613,12 +614,15 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {/* ═══ REST ═══ */}
+      {/* ═══ REST — virtualized ═══ */}
       {restUsers.length > 0 && (
         <div>
-          <SectionHeader icon={Users} title="Ещё анкеты" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {restUsers.map(({ user, score }) => (
+          <SectionHeader icon={Users} title="Ещё анкеты" badge={`${restUsers.length}`} />
+          <VirtuosoGrid
+            useWindowScroll
+            data={restUsers}
+            listClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            itemContent={(_, { user, score }) => (
               <DiscoverCard
                 key={user.id} user={user} score={score}
                 onClick={() => navigate(`/profile/${user.username}`)}
@@ -626,8 +630,8 @@ export default function DiscoverPage() {
                 onPass={(e) => handlePass(e, user.id)}
                 onMessage={(e) => handleMessage(e, user.id)}
               />
-            ))}
-          </div>
+            )}
+          />
         </div>
       )}
 
