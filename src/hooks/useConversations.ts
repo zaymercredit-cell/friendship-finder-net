@@ -113,15 +113,16 @@ export function useConversationList() {
   useEffect(() => {
     if (!user) return;
     const channelName = `conv-list-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const channel = supabase.channel(channelName);
-    channel.on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "messages" },
-      () => {
-        queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
-      }
-    );
-    channel.subscribe();
+    const channel = supabase
+      .channel(channelName)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
+        }
+      )
+      .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
