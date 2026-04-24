@@ -90,10 +90,10 @@ const queryClient = new QueryClient({
   },
 });
 
-function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
+function AuthenticatedLayout() {
   return (
     <ProtectedRoute>
-      <AppLayout>{children}</AppLayout>
+      <AppLayout />
     </ProtectedRoute>
   );
 }
@@ -128,52 +128,55 @@ const App = () => (
               {/* Onboarding */}
               <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
 
-              {/* Admin */}
-              <Route path="/admin" element={<AuthenticatedRoute><AdminDashboard /></AuthenticatedRoute>} />
-              <Route path="/admin/users" element={<AuthenticatedRoute><AdminUsersPage /></AuthenticatedRoute>} />
-              <Route path="/admin/reports" element={<AuthenticatedRoute><AdminReportsPage /></AuthenticatedRoute>} />
-              <Route path="/admin/safety" element={<AuthenticatedRoute><AdminSafetyAlertsPage /></AuthenticatedRoute>} />
-              <Route path="/admin/messages" element={<AuthenticatedRoute><AdminMessagesPage /></AuthenticatedRoute>} />
-              <Route path="/admin/posts" element={<AuthenticatedRoute><AdminPlaceholder /></AuthenticatedRoute>} />
-              <Route path="/admin/tags" element={<AuthenticatedRoute><AdminPlaceholder /></AuthenticatedRoute>} />
-              <Route path="/admin/communities" element={<AuthenticatedRoute><AdminCommunitiesPage /></AuthenticatedRoute>} />
-              <Route path="/admin/events" element={<AuthenticatedRoute><AdminEventsPage /></AuthenticatedRoute>} />
-              <Route path="/admin/seed" element={<AuthenticatedRoute><AdminSeedPage /></AuthenticatedRoute>} />
-              <Route path="/admin/news" element={<AuthenticatedRoute><AdminNewsPage /></AuthenticatedRoute>} />
+              {/* Authenticated — shared layout shell (top bar, sidebar, mobile nav stay mounted) */}
+              <Route element={<AuthenticatedLayout />}>
+                {/* Admin */}
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/users" element={<AdminUsersPage />} />
+                <Route path="/admin/reports" element={<AdminReportsPage />} />
+                <Route path="/admin/safety" element={<AdminSafetyAlertsPage />} />
+                <Route path="/admin/messages" element={<AdminMessagesPage />} />
+                <Route path="/admin/posts" element={<AdminPlaceholder />} />
+                <Route path="/admin/tags" element={<AdminPlaceholder />} />
+                <Route path="/admin/communities" element={<AdminCommunitiesPage />} />
+                <Route path="/admin/events" element={<AdminEventsPage />} />
+                <Route path="/admin/seed" element={<AdminSeedPage />} />
+                <Route path="/admin/news" element={<AdminNewsPage />} />
 
-              {/* Authenticated */}
-              <Route path="/feed" element={<AuthenticatedRoute><FeedPage /></AuthenticatedRoute>} />
-              <Route path="/home" element={<AuthenticatedRoute><HomePage /></AuthenticatedRoute>} />
-              <Route path="/profile/:username" element={<AuthenticatedRoute><ProfilePage /></AuthenticatedRoute>} />
-              <Route path="/friends" element={<AuthenticatedRoute><FriendsPage /></AuthenticatedRoute>} />
-              <Route path="/people" element={<AuthenticatedRoute><PeoplePage /></AuthenticatedRoute>} />
-              <Route path="/discover" element={<AuthenticatedRoute><DiscoverPage /></AuthenticatedRoute>} />
-              <Route path="/swipe" element={<AuthenticatedRoute><SwipePage /></AuthenticatedRoute>} />
-              <Route path="/matches" element={<AuthenticatedRoute><MatchesPage /></AuthenticatedRoute>} />
-              <Route path="/messages" element={<AuthenticatedRoute><MessagesPage /></AuthenticatedRoute>} />
-              <Route path="/messages/:id" element={<AuthenticatedRoute><MessagesPage /></AuthenticatedRoute>} />
-              <Route path="/communities" element={<AuthenticatedRoute><CommunitiesPage /></AuthenticatedRoute>} />
-              <Route path="/communities/:id" element={<AuthenticatedRoute><CommunitiesPage /></AuthenticatedRoute>} />
-              <Route path="/events" element={<AuthenticatedRoute><EventsPage /></AuthenticatedRoute>} />
-              <Route path="/notifications" element={<AuthenticatedRoute><NotificationsPage /></AuthenticatedRoute>} />
-              <Route path="/settings" element={<AuthenticatedRoute><SettingsPage /></AuthenticatedRoute>} />
-              <Route path="/profile-views" element={<AuthenticatedRoute><ProfileViewsPage /></AuthenticatedRoute>} />
-              <Route path="/people-nearby" element={<AuthenticatedRoute><PeopleNearbyPage /></AuthenticatedRoute>} />
-              <Route path="/meetups" element={<AuthenticatedRoute><MeetupsPage /></AuthenticatedRoute>} />
-              <Route path="/meetups/:id" element={<AuthenticatedRoute><MeetupsPage /></AuthenticatedRoute>} />
-              <Route path="/map" element={<AuthenticatedRoute><MapPage /></AuthenticatedRoute>} />
-              <Route path="/invite" element={<AuthenticatedRoute><InvitePage /></AuthenticatedRoute>} />
-              <Route path="/achievements" element={<AuthenticatedRoute><AchievementsPage /></AuthenticatedRoute>} />
-              <Route path="/activity" element={<AuthenticatedRoute><ActivityPage /></AuthenticatedRoute>} />
-              <Route path="/premium" element={<AuthenticatedRoute><PremiumPage /></AuthenticatedRoute>} />
-              <Route path="/likes-you" element={<AuthenticatedRoute><LikesYouPage /></AuthenticatedRoute>} />
-              <Route path="/dates" element={<AuthenticatedRoute><DatesPage /></AuthenticatedRoute>} />
-              <Route path="/vibe-rooms" element={<AuthenticatedRoute><VibeRoomsPage /></AuthenticatedRoute>} />
-              <Route path="/social-graph" element={<AuthenticatedRoute><SocialGraphPage /></AuthenticatedRoute>} />
-              <Route path="/energy" element={<AuthenticatedRoute><EnergyPage /></AuthenticatedRoute>} />
-              <Route path="/gifts" element={<AuthenticatedRoute><GiftsPage /></AuthenticatedRoute>} />
-              <Route path="/universe" element={<AuthenticatedRoute><UniversePage /></AuthenticatedRoute>} />
-              <Route path="/bookmarks" element={<AuthenticatedRoute><div className="max-w-xl mx-auto text-center py-16"><p className="text-muted-foreground">Закладок пока нет</p></div></AuthenticatedRoute>} />
+                {/* App */}
+                <Route path="/feed" element={<FeedPage />} />
+                <Route path="/home" element={<HomePage />} />
+                <Route path="/profile/:username" element={<ProfilePage />} />
+                <Route path="/friends" element={<FriendsPage />} />
+                <Route path="/people" element={<PeoplePage />} />
+                <Route path="/discover" element={<DiscoverPage />} />
+                <Route path="/swipe" element={<SwipePage />} />
+                <Route path="/matches" element={<MatchesPage />} />
+                <Route path="/messages" element={<MessagesPage />} />
+                <Route path="/messages/:id" element={<MessagesPage />} />
+                <Route path="/communities" element={<CommunitiesPage />} />
+                <Route path="/communities/:id" element={<CommunitiesPage />} />
+                <Route path="/events" element={<EventsPage />} />
+                <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/settings" element={<SettingsPage />} />
+                <Route path="/profile-views" element={<ProfileViewsPage />} />
+                <Route path="/people-nearby" element={<PeopleNearbyPage />} />
+                <Route path="/meetups" element={<MeetupsPage />} />
+                <Route path="/meetups/:id" element={<MeetupsPage />} />
+                <Route path="/map" element={<MapPage />} />
+                <Route path="/invite" element={<InvitePage />} />
+                <Route path="/achievements" element={<AchievementsPage />} />
+                <Route path="/activity" element={<ActivityPage />} />
+                <Route path="/premium" element={<PremiumPage />} />
+                <Route path="/likes-you" element={<LikesYouPage />} />
+                <Route path="/dates" element={<DatesPage />} />
+                <Route path="/vibe-rooms" element={<VibeRoomsPage />} />
+                <Route path="/social-graph" element={<SocialGraphPage />} />
+                <Route path="/energy" element={<EnergyPage />} />
+                <Route path="/gifts" element={<GiftsPage />} />
+                <Route path="/universe" element={<UniversePage />} />
+                <Route path="/bookmarks" element={<div className="max-w-xl mx-auto text-center py-16"><p className="text-muted-foreground">Закладок пока нет</p></div>} />
+              </Route>
 
               <Route path="*" element={<NotFound />} />
             </Routes>
