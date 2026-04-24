@@ -165,7 +165,7 @@ function GlobalSearch() {
   );
 }
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function AppLayout({ children }: { children?: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
