@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AiAssistantWidget from "@/components/ai/AiAssistantWidget";
+import { prefetchRoute } from "@/lib/route-prefetch";
 
 const sidebarItems = [
   { title: "Главная", url: "/home", icon: Sparkles },
@@ -282,6 +283,8 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
               <Link
                 key={item.url}
                 to={item.url}
+                onMouseEnter={() => prefetchRoute(item.url)}
+                onFocus={() => prefetchRoute(item.url)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2 rounded-lg text-[14px] font-medium transition-all duration-150",
                   isActive(item.url)
@@ -317,6 +320,8 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
               <Link
                 key={item.url}
                 to={item.url}
+                onTouchStart={() => prefetchRoute(item.url)}
+                onMouseEnter={() => prefetchRoute(item.url)}
                 className={cn(
                   "relative flex flex-col items-center gap-0.5 py-1 min-w-[52px] transition-all duration-200",
                   active ? "text-primary" : "text-muted-foreground active:scale-95"
@@ -353,6 +358,8 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
                 key={item.url}
                 to={item.url}
                 onClick={() => setMobileMenuOpen(false)}
+                onTouchStart={() => prefetchRoute(item.url)}
+                onMouseEnter={() => prefetchRoute(item.url)}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] font-medium",
                   isActive(item.url) ? "bg-primary/8 text-primary" : "text-foreground hover:bg-secondary"
