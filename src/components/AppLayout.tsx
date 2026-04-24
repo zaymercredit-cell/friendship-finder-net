@@ -1,4 +1,6 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Search, Bell, MessageCircle, Plus, Menu, X,
@@ -163,7 +165,7 @@ function GlobalSearch() {
   );
 }
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function AppLayout({ children }: { children?: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { profile, signOut } = useAuth();
@@ -296,7 +298,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Main Content */}
         <main className="flex-1 min-w-0 px-4 py-4 pb-20 md:pb-4">
-          {children}
+          <Suspense fallback={
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-6 w-6 animate-spin text-primary/70" />
+            </div>
+          }>
+            {children ?? <Outlet />}
+          </Suspense>
         </main>
       </div>
 
