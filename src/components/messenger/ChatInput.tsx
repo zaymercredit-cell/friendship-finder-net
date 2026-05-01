@@ -12,9 +12,11 @@ interface Props {
   prefillText?: string;
   onPrefillUsed?: () => void;
   otherUserId?: string;
+  onTyping?: () => void;
+  onStopTyping?: () => void;
 }
 
-export default function ChatInput({ conversationId, prefillText, onPrefillUsed, otherUserId }: Props) {
+export default function ChatInput({ conversationId, prefillText, onPrefillUsed, otherUserId, onTyping, onStopTyping }: Props) {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
