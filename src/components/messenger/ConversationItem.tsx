@@ -83,3 +83,6 @@ function ConversationItem({ conv, isActive, onClick }: Props) {
     </button>
   );
 }
+
+export default memo(ConversationItem);
+
