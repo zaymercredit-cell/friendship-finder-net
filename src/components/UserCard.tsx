@@ -1,12 +1,14 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { User } from "@/lib/mock-data";
 import { currentUser } from "@/lib/mock-data";
 import { Heart, MessageCircle, MapPin, Sparkles, Shield, Zap, Coffee } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useMemo, memo } from "react";
+import { useMemo, memo, useCallback } from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import SmartImage from "@/components/ui/smart-image";
+import { prefetchProfile } from "@/lib/data-prefetch";
 
 // Deterministic pseudo-random based on user ID
 function pseudoScore(id: string, base: number, range: number): number {
@@ -24,6 +26,7 @@ export default memo(function UserCard({ user, score }: {
   isVip?: boolean;
 }) {
   const navigate = useNavigate();
+  const qc = useQueryClient();
 
   const commonInterests = useMemo(() => {
     return user.interests.filter(i => currentUser.interests.includes(i));
@@ -33,17 +36,28 @@ export default memo(function UserCard({ user, score }: {
   const conversationEase = useMemo(() => pseudoScore(user.id + "conv", 50, 45), [user.id]);
   const trustLevel = useMemo(() => pseudoScore(user.id + "trust", 60, 35), [user.id]);
 
+  const warmProfile = useCallback(() => {
+    if (user.username) prefetchProfile(qc, user.username);
+  }, [qc, user.username]);
+
   return (
     <div className="rounded-2xl overflow-hidden bg-card border border-border/40 card-shadow hover:card-shadow-hover transition-shadow duration-150">
       {/* Photo */}
-      <Link to={`/profile/${user.username}`} className="block relative aspect-[3/4] overflow-hidden">
-        <img
+      <Link
+        to={`/profile/${user.username}`}
+        className="block relative aspect-[3/4] overflow-hidden"
+        onMouseEnter={warmProfile}
+        onFocus={warmProfile}
+        onTouchStart={warmProfile}
+      >
+        <SmartImage
           src={user.avatar}
           alt={user.name}
-          className="w-full h-full object-cover"
-          loading="lazy"
+          aspectClass="aspect-[3/4]"
+          wrapperClassName="absolute inset-0"
+          className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
 
         {/* Top badges */}
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
