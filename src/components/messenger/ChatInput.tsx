@@ -12,9 +12,11 @@ interface Props {
   prefillText?: string;
   onPrefillUsed?: () => void;
   otherUserId?: string;
+  onTyping?: () => void;
+  onStopTyping?: () => void;
 }
 
-export default function ChatInput({ conversationId, prefillText, onPrefillUsed, otherUserId }: Props) {
+export default function ChatInput({ conversationId, prefillText, onPrefillUsed, otherUserId, onTyping, onStopTyping }: Props) {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -51,12 +53,13 @@ export default function ChatInput({ conversationId, prefillText, onPrefillUsed, 
     }
 
     sendMessage.mutate({ conversationId, text: trimmed || undefined, mediaUrl });
+    onStopTyping?.();
     setText("");
     setImagePreview(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = "40px";
     }
-  }, [text, imagePreview, conversationId, sendMessage]);
+  }, [text, imagePreview, conversationId, sendMessage, onStopTyping]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -123,7 +126,7 @@ export default function ChatInput({ conversationId, prefillText, onPrefillUsed, 
         <textarea
           ref={textareaRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => { setText(e.target.value); if (e.target.value) onTyping?.(); else onStopTyping?.(); }}
           onKeyDown={handleKeyDown}
           placeholder="Напишите сообщение…"
           rows={1}

@@ -11,9 +11,10 @@ import type { ConversationListItem } from "@/hooks/useConversations";
 interface Props {
   conv: ConversationListItem;
   onBack: () => void;
+  isTyping?: boolean;
 }
 
-export default function ChatHeader({ conv, onBack }: Props) {
+export default function ChatHeader({ conv, onBack, isTyping }: Props) {
   const name = `${conv.otherUser.first_name} ${conv.otherUser.last_name}`.trim();
   const profileUrl = `/profile/${conv.otherUser.username || conv.otherUser.user_id}`;
 
@@ -43,8 +44,16 @@ export default function ChatHeader({ conv, onBack }: Props) {
             {name}
             {(conv.otherUser as any).is_verified && <ShieldCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />}
           </p>
-          <p className="text-[11.5px] text-muted-foreground leading-none mt-0.5 flex items-center gap-1">
-            {conv.otherUser.is_online ? (
+          <p className="text-[11.5px] text-muted-foreground leading-none mt-0.5 flex items-center gap-1 transition-colors">
+            {isTyping ? (
+              <span className="text-primary font-medium flex items-center gap-1">
+                печатает<span className="inline-flex gap-0.5 ml-0.5">
+                  <span className="h-1 w-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="h-1 w-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: "120ms" }} />
+                  <span className="h-1 w-1 rounded-full bg-primary animate-bounce" style={{ animationDelay: "240ms" }} />
+                </span>
+              </span>
+            ) : conv.otherUser.is_online ? (
               <><span className="h-1.5 w-1.5 rounded-full bg-success" />в сети</>
             ) : "был(а) недавно"}
           </p>
