@@ -251,8 +251,46 @@ export function useSendMessage() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (_, vars) => {
-      queryClient.invalidateQueries({ queryKey: ["messages", vars.conversationId] });
+    // Optimistic update — message appears in chat instantly, before network roundtrip.
+    onMutate: async ({ conversationId, text, mediaUrl }) => {
+      if (!user) return;
+      await queryClient.cancelQueries({ queryKey: ["messages", conversationId] });
+      const previous = queryClient.getQueryData(["messages", conversationId]);
+      const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const optimisticMsg: MessageItem = {
+        id: tempId,
+        conversation_id: conversationId,
+        sender_id: user.id,
+        text: text || null,
+        media_url: mediaUrl || null,
+        media_type: mediaUrl ? "image" : null,
+        is_system: false,
+        created_at: new Date().toISOString(),
+        read_at: null,
+      };
+      queryClient.setQueryData(["messages", conversationId], (old: any) => {
+        if (!old) return old;
+        const pages = [...old.pages];
+        const lastIdx = pages.length - 1;
+        pages[lastIdx] = [...(pages[lastIdx] || []), optimisticMsg];
+        return { ...old, pages };
+      });
+      return { previous, tempId };
+    },
+    onError: (_err, vars, ctx) => {
+      if (ctx?.previous) {
+        queryClient.setQueryData(["messages", vars.conversationId], ctx.previous);
+      }
+    },
+    onSuccess: (data, vars, ctx) => {
+      // Replace optimistic msg with the real one (same id from realtime might also arrive).
+      queryClient.setQueryData(["messages", vars.conversationId], (old: any) => {
+        if (!old) return old;
+        const pages = old.pages.map((page: MessageItem[]) =>
+          page.map((m) => (m.id === ctx?.tempId ? (data as MessageItem) : m))
+        );
+        return { ...old, pages };
+      });
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
