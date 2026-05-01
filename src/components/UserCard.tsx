@@ -1,12 +1,14 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { User } from "@/lib/mock-data";
 import { currentUser } from "@/lib/mock-data";
 import { Heart, MessageCircle, MapPin, Sparkles, Shield, Zap, Coffee } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useMemo, memo } from "react";
+import { useMemo, memo, useCallback } from "react";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import SmartImage from "@/components/ui/smart-image";
+import { prefetchProfile } from "@/lib/data-prefetch";
 
 // Deterministic pseudo-random based on user ID
 function pseudoScore(id: string, base: number, range: number): number {
