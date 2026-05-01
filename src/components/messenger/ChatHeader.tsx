@@ -11,9 +11,10 @@ import type { ConversationListItem } from "@/hooks/useConversations";
 interface Props {
   conv: ConversationListItem;
   onBack: () => void;
+  isTyping?: boolean;
 }
 
-export default function ChatHeader({ conv, onBack }: Props) {
+export default function ChatHeader({ conv, onBack, isTyping }: Props) {
   const name = `${conv.otherUser.first_name} ${conv.otherUser.last_name}`.trim();
   const profileUrl = `/profile/${conv.otherUser.username || conv.otherUser.user_id}`;
 
