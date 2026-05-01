@@ -53,12 +53,13 @@ export default function ChatInput({ conversationId, prefillText, onPrefillUsed, 
     }
 
     sendMessage.mutate({ conversationId, text: trimmed || undefined, mediaUrl });
+    onStopTyping?.();
     setText("");
     setImagePreview(null);
     if (textareaRef.current) {
       textareaRef.current.style.height = "40px";
     }
-  }, [text, imagePreview, conversationId, sendMessage]);
+  }, [text, imagePreview, conversationId, sendMessage, onStopTyping]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
