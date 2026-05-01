@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Virtuoso } from "react-virtuoso";
+import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import {
   useConversationList, useMessages,
   type MessageItem,
 } from "@/hooks/useConversations";
+import { useTypingIndicator } from "@/hooks/useTypingIndicator";
 
 import ConversationItem from "@/components/messenger/ConversationItem";
 import ChatHeader from "@/components/messenger/ChatHeader";
@@ -24,6 +25,16 @@ import ChatSafetyAlert from "@/components/trust/ChatSafetyAlert";
 import AiConversationStarters from "@/components/ai/AiConversationStarters";
 import AiSmartReplies from "@/components/ai/AiSmartReplies";
 
+// Big virtual offset → lets us prepend (older) pages to the front without
+// shifting visible items (Virtuoso anchors via firstItemIndex).
+const START_INDEX = 100_000;
+
+interface PreparedMessage {
+  msg: MessageItem;
+  showDate: string | null;
+  groupedWithNext: boolean;
+}
+
 export default function MessagesPage() {
   const { id: routeId } = useParams();
   const navigate = useNavigate();
@@ -32,55 +43,82 @@ export default function MessagesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(routeId || null);
   const selectedConv = conversations?.find(c => c.id === selectedId);
   const { data: messages, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(selectedId);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [search, setSearch] = useState("");
   const [aiText, setAiText] = useState("");
-  const [initialScroll, setInitialScroll] = useState(false);
   const [datePlannerOpen, setDatePlannerOpen] = useState(false);
+
+  const virtuosoRef = useRef<VirtuosoHandle>(null);
+  const firstItemIndexRef = useRef(START_INDEX);
+  const prevLengthRef = useRef(0);
+  const prevConvRef = useRef<string | null>(null);
+  const atBottomRef = useRef(true);
+
+  const { isAnyoneTyping, notifyTyping, stopTyping } = useTypingIndicator(selectedId);
 
   useEffect(() => {
     if (routeId && routeId !== selectedId) {
       setSelectedId(routeId);
-      setInitialScroll(false);
     }
   }, [routeId]);
 
-  // Auto-scroll to bottom on initial load or new messages
+  // Reset virtual indices when switching conversations.
   useEffect(() => {
-    if (messages && messages.length > 0 && !initialScroll) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
-      setInitialScroll(true);
-    } else if (messages && initialScroll) {
-      // Only auto-scroll for new messages if already at bottom
-      const container = messagesContainerRef.current;
-      if (container) {
-        const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-        if (isAtBottom) {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }
+    if (selectedId !== prevConvRef.current) {
+      firstItemIndexRef.current = START_INDEX;
+      prevLengthRef.current = 0;
+      atBottomRef.current = true;
+      prevConvRef.current = selectedId;
+    }
+  }, [selectedId]);
+
+  // Maintain firstItemIndex when older messages are prepended.
+  useEffect(() => {
+    const len = messages?.length || 0;
+    const prev = prevLengthRef.current;
+    if (len > prev && prev > 0) {
+      // Detect prepend: if the first id changed and last id stayed, items were added at the front.
+      // Heuristic: when length grows without bottom growth, treat the diff as a prepend.
+      // We check by comparing the position of the previous tail.
+      const added = len - prev;
+      // If the new last message id is the same as the previous last id → all added at front.
+      // (Safe to compute from current messages.)
+      const currLastId = messages![len - 1].id;
+      // Without storing tail explicitly, infer prepend when not at bottom & fetching previous.
+      // Simpler: if user is not at bottom, treat growth as prepend.
+      if (!atBottomRef.current) {
+        firstItemIndexRef.current = Math.max(0, firstItemIndexRef.current - added);
+      } else {
+        // Growth at the bottom (incoming/sent message) → keep firstItemIndex,
+        // Virtuoso will autoscroll via followOutput.
+        void currLastId;
       }
     }
-  }, [messages?.length, initialScroll]);
+    prevLengthRef.current = len;
+  }, [messages]);
 
-  // Load older messages on scroll to top
-  const handleScroll = useCallback(() => {
-    const container = messagesContainerRef.current;
-    if (!container || !hasNextPage || isFetchingNextPage) return;
-    if (container.scrollTop < 80) {
-      const prevHeight = container.scrollHeight;
-      fetchNextPage().then(() => {
-        // Maintain scroll position
-        requestAnimationFrame(() => {
-          container.scrollTop = container.scrollHeight - prevHeight;
-        });
-      });
+  const prepared: PreparedMessage[] = useMemo(() => {
+    const arr = messages || [];
+    return arr.map((msg, idx) => {
+      const thisDate = new Date(msg.created_at).toDateString();
+      const prevDate = idx > 0 ? new Date(arr[idx - 1].created_at).toDateString() : null;
+      const showDate = idx === 0 || thisDate !== prevDate ? formatDateSeparator(msg.created_at) : null;
+      const next = arr[idx + 1];
+      const groupedWithNext = !!next
+        && !next.is_system && !msg.is_system
+        && next.sender_id === msg.sender_id
+        && new Date(next.created_at).getTime() - new Date(msg.created_at).getTime() < 2 * 60 * 1000;
+      return { msg, showDate, groupedWithNext };
+    });
+  }, [messages]);
+
+  const handleStartReached = useCallback(() => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
     }
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const selectConv = (id: string) => {
     setSelectedId(id);
-    setInitialScroll(false);
     navigate(`/messages/${id}`, { replace: true });
   };
 
@@ -94,13 +132,6 @@ export default function MessagesPage() {
     const name = `${c.otherUser.first_name} ${c.otherUser.last_name}`.toLowerCase();
     return name.includes(search.toLowerCase());
   });
-
-  const getDateForMessage = (msg: MessageItem, idx: number, msgs: MessageItem[]) => {
-    const thisDate = new Date(msg.created_at).toDateString();
-    if (idx === 0) return formatDateSeparator(msg.created_at);
-    const prevDate = new Date(msgs[idx - 1].created_at).toDateString();
-    return thisDate !== prevDate ? formatDateSeparator(msg.created_at) : null;
-  };
 
   return (
     <div className="max-w-5xl mx-auto px-0 md:px-4">
@@ -168,7 +199,7 @@ export default function MessagesPage() {
         )}>
           {selectedConv ? (
             <>
-              <ChatHeader conv={selectedConv} onBack={goBack} />
+              <ChatHeader conv={selectedConv} onBack={goBack} isTyping={isAnyoneTyping} />
 
               <ChatSafetyAlert
                 otherUserVerified={(selectedConv.otherUser as any).is_verified}
@@ -176,26 +207,35 @@ export default function MessagesPage() {
                 isNewConversation={!messages || messages.length <= 2}
               />
 
-              {/* Messages */}
-              <div
-                ref={messagesContainerRef}
-                className="flex-1 overflow-y-auto px-4 md:px-6 py-3"
-                onScroll={handleScroll}
-              >
+              {/* Virtualized messages */}
+              <div className="flex-1 min-h-0 relative">
                 {isFetchingNextPage && (
-                  <div className="flex justify-center py-2">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 bg-card/90 backdrop-blur-sm rounded-full px-3 py-1 border border-border/50 shadow-sm">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   </div>
                 )}
-                {(messages || []).map((msg, idx, arr) => (
-                  <MessageBubble
-                    key={msg.id}
-                    msg={msg}
-                    isMine={msg.sender_id === user?.id}
-                    showDate={getDateForMessage(msg, idx, arr)}
+                {prepared.length > 0 ? (
+                  <Virtuoso
+                    ref={virtuosoRef}
+                    data={prepared}
+                    firstItemIndex={firstItemIndexRef.current}
+                    initialTopMostItemIndex={prepared.length - 1}
+                    startReached={handleStartReached}
+                    followOutput={(isAtBottom) => (isAtBottom ? "smooth" : false)}
+                    atBottomStateChange={(at) => { atBottomRef.current = at; }}
+                    increaseViewportBy={{ top: 600, bottom: 600 }}
+                    className="px-4 md:px-6 py-3"
+                    itemContent={(_, item) => (
+                      <MessageBubble
+                        msg={item.msg}
+                        isMine={item.msg.sender_id === user?.id}
+                        showDate={item.showDate}
+                        groupedWithNext={item.groupedWithNext}
+                        otherLastReadAt={selectedConv.otherLastReadAt}
+                      />
+                    )}
                   />
-                ))}
-                {messages?.length === 0 && selectedConv && (
+                ) : (
                   <div className="flex flex-col items-center justify-center h-full gap-4 px-2">
                     <p className="text-[13.5px] text-muted-foreground/70">
                       Напишите первое сообщение, чтобы начать общение
@@ -208,7 +248,6 @@ export default function MessagesPage() {
                     />
                   </div>
                 )}
-                <div ref={messagesEndRef} />
               </div>
 
               {/* AI Coach Panel */}
@@ -265,7 +304,14 @@ export default function MessagesPage() {
                 </div>
               )}
 
-              <ChatInput conversationId={selectedConv.id} prefillText={aiText} onPrefillUsed={() => setAiText("")} />
+              <ChatInput
+                conversationId={selectedConv.id}
+                prefillText={aiText}
+                onPrefillUsed={() => setAiText("")}
+                otherUserId={selectedConv.otherUser.user_id}
+                onTyping={notifyTyping}
+                onStopTyping={stopTyping}
+              />
 
               {datePlannerOpen && selectedConv && (
                 <DatePlannerModal
