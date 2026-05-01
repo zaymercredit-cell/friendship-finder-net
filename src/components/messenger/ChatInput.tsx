@@ -126,7 +126,7 @@ export default function ChatInput({ conversationId, prefillText, onPrefillUsed, 
         <textarea
           ref={textareaRef}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => { setText(e.target.value); if (e.target.value) onTyping?.(); else onStopTyping?.(); }}
           onKeyDown={handleKeyDown}
           placeholder="Напишите сообщение…"
           rows={1}
