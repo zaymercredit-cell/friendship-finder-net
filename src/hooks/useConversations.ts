@@ -65,12 +65,13 @@ export function useConversationList() {
 
       const { data: allParticipants } = await supabase
         .from("conversation_participants")
-        .select("conversation_id, user_id")
+        .select("conversation_id, user_id, last_read_at")
         .in("conversation_id", convIds)
         .neq("user_id", user.id);
 
       const otherUserIds = [...new Set((allParticipants || []).map(p => p.user_id))];
       const otherUserMap = new Map((allParticipants || []).map(p => [p.conversation_id, p.user_id]));
+      const otherLastReadMap = new Map((allParticipants || []).map(p => [p.conversation_id, p.last_read_at]));
 
       const { data: profiles } = await supabase
         .from("profiles")
@@ -80,8 +81,6 @@ export function useConversationList() {
       const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
 
       // BATCHED unread counts — one query for all conversations.
-      // Fetch only recent foreign-message timestamps per conversation, then
-      // bucket-count locally. This eliminates the N+1 head-count round-trips.
       const { data: recentMsgs } = await supabase
         .from("messages")
         .select("conversation_id, sender_id, created_at")
@@ -111,6 +110,7 @@ export function useConversationList() {
           otherUser: profile,
           unreadCount: unreadMap.get(conv.id) || 0,
           lastReadAt: lastReadMap.get(conv.id),
+          otherLastReadAt: otherLastReadMap.get(conv.id) ?? null,
         });
       }
 
