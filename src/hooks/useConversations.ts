@@ -121,7 +121,7 @@ export function useConversationList() {
     refetchInterval: 30000,
   });
 
-  // Realtime subscription
+  // Realtime subscription — both messages (new/last text) and read receipts.
   useEffect(() => {
     if (!user) return;
     const channelName = `conv-list-${user.id}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -131,6 +131,14 @@ export function useConversationList() {
         "postgres_changes",
         { event: "*", schema: "public", table: "messages" },
         () => {
+          queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "conversation_participants" },
+        () => {
+          // Other party read the chat — refresh ticks.
           queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
         }
       )
