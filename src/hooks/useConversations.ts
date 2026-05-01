@@ -17,6 +17,8 @@ export interface ConversationListItem {
   };
   unreadCount: number;
   lastReadAt: string | null;
+  /** When the OTHER participant last read the conversation — drives "прочитано" ticks. */
+  otherLastReadAt: string | null;
 }
 
 export interface MessageItem {
