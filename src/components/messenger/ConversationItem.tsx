@@ -1,6 +1,9 @@
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { ConversationListItem } from "@/hooks/useConversations";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, memo } from "react";
+import { prefetchConversation } from "@/lib/data-prefetch";
 
 function formatTime(dateStr: string | null) {
   if (!dateStr) return "";
@@ -18,13 +21,18 @@ interface Props {
   onClick: () => void;
 }
 
-export default function ConversationItem({ conv, isActive, onClick }: Props) {
+function ConversationItem({ conv, isActive, onClick }: Props) {
   const name = `${conv.otherUser.first_name} ${conv.otherUser.last_name}`.trim();
   const hasUnread = conv.unreadCount > 0;
+  const qc = useQueryClient();
+  const warm = useCallback(() => prefetchConversation(qc, conv.id), [qc, conv.id]);
 
   return (
     <button
       onClick={onClick}
+      onMouseEnter={warm}
+      onFocus={warm}
+      onTouchStart={warm}
       className={cn(
         "w-full flex items-center gap-3 px-4 py-3 transition-all duration-150 text-left group relative",
         isActive
