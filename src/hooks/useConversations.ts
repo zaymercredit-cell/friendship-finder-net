@@ -195,8 +195,9 @@ export function useMessages(conversationId: string | null) {
   // Realtime for this conversation
   useEffect(() => {
     if (!conversationId) return;
+    const channelName = `messages-${conversationId}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const channel = supabase
-      .channel(`messages-${conversationId}`)
+      .channel(channelName)
       .on("postgres_changes", {
         event: "INSERT",
         schema: "public",
@@ -206,13 +207,26 @@ export function useMessages(conversationId: string | null) {
         queryClient.setQueryData(["messages", conversationId], (old: any) => {
           if (!old) return old;
           const newMsg = payload.new as MessageItem;
-          // Add to last page
           const pages = [...old.pages];
-          const lastPage = [...(pages[pages.length - 1] || [])];
-          if (!lastPage.find((m: MessageItem) => m.id === newMsg.id)) {
-            lastPage.push(newMsg);
-            pages[pages.length - 1] = lastPage;
+          const lastIdx = pages.length - 1;
+          const lastPage = [...(pages[lastIdx] || [])];
+          // Skip if real id already present.
+          if (lastPage.some((m: MessageItem) => m.id === newMsg.id)) {
+            return old;
           }
+          // Replace matching optimistic message (same sender+text within 30s window).
+          const optIdx = lastPage.findIndex((m: MessageItem) =>
+            m.id.startsWith("optimistic-") &&
+            m.sender_id === newMsg.sender_id &&
+            (m.text || "") === (newMsg.text || "") &&
+            Math.abs(new Date(m.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 30_000
+          );
+          if (optIdx !== -1) {
+            lastPage[optIdx] = newMsg;
+          } else {
+            lastPage.push(newMsg);
+          }
+          pages[lastIdx] = lastPage;
           return { ...old, pages };
         });
         queryClient.invalidateQueries({ queryKey: ["conversations"] });
