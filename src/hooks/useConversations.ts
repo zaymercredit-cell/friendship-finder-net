@@ -77,28 +77,38 @@ export function useConversationList() {
 
       const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
 
+      // BATCHED unread counts — one query for all conversations.
+      // Fetch only recent foreign-message timestamps per conversation, then
+      // bucket-count locally. This eliminates the N+1 head-count round-trips.
+      const { data: recentMsgs } = await supabase
+        .from("messages")
+        .select("conversation_id, sender_id, created_at")
+        .in("conversation_id", convIds)
+        .neq("sender_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      const unreadMap = new Map<string, number>();
+      for (const m of recentMsgs || []) {
+        const lr = lastReadMap.get(m.conversation_id) || "1970-01-01";
+        if (m.created_at > lr) {
+          unreadMap.set(m.conversation_id, (unreadMap.get(m.conversation_id) || 0) + 1);
+        }
+      }
+
       const results: ConversationListItem[] = [];
       for (const conv of convos) {
         const otherUserId = otherUserMap.get(conv.id);
         if (!otherUserId) continue;
         const profile = profileMap.get(otherUserId);
         if (!profile) continue;
-
-        const lastRead = lastReadMap.get(conv.id);
-        const { count } = await supabase
-          .from("messages")
-          .select("*", { count: "exact", head: true })
-          .eq("conversation_id", conv.id)
-          .neq("sender_id", user.id)
-          .gt("created_at", lastRead || "1970-01-01");
-
         results.push({
           id: conv.id,
           lastMessageText: conv.last_message_text,
           lastMessageAt: conv.last_message_at,
           otherUser: profile,
-          unreadCount: count || 0,
-          lastReadAt: lastRead,
+          unreadCount: unreadMap.get(conv.id) || 0,
+          lastReadAt: lastReadMap.get(conv.id),
         });
       }
 
