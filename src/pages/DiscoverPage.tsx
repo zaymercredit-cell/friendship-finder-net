@@ -1,4 +1,4 @@
-import { useState, useMemo, useDeferredValue, useEffect, useRef } from "react";
+import React, { useState, useMemo, useDeferredValue, useEffect, useRef } from "react";
 import { VirtuosoGrid } from "react-virtuoso";
 import { mockUsers, currentUser, calculateMatchScore, allInterests, communicationGoalOptions, cities, lookingForGenderOptions } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
