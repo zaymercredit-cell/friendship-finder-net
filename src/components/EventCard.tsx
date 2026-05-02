@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarDays, MapPin, Users, Check, Clock, ArrowRight, Share2, Sparkles, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { memo } from "react";
+import SmartImage from "@/components/ui/smart-image";
 
 export interface EventCardData {
   id: string;
@@ -55,7 +56,7 @@ export default memo(function EventCard({ event, onToggleGoing, compact }: Props)
     return (
       <div className="flex items-center gap-3 p-3 rounded-xl bg-secondary/40 hover:bg-secondary/70 transition-colors duration-150 cursor-pointer">
         <div className="h-12 w-12 rounded-xl overflow-hidden shrink-0">
-          <img src={cover} alt={event.title} className="h-full w-full object-cover" loading="lazy" />
+          <SmartImage src={cover} alt={event.title} wrapperClassName="h-full w-full" className="object-cover" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-semibold text-foreground truncate">{event.title}</p>
@@ -72,14 +73,14 @@ export default memo(function EventCard({ event, onToggleGoing, compact }: Props)
   return (
     <div className="premium-card overflow-hidden">
       {/* Cover */}
-      <div className="relative h-44 overflow-hidden">
-        <img
+      <div className="relative h-44">
+        <SmartImage
           src={cover}
           alt={event.title}
-          className="w-full h-full object-cover"
-          loading="lazy"
+          wrapperClassName="absolute inset-0 h-full w-full"
+          className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent pointer-events-none" />
 
         {/* Top badges */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
