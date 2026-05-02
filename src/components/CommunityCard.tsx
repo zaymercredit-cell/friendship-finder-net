@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Users, MessageCircle, ArrowRight, Share2, CalendarDays, Sparkles, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { memo } from "react";
+import SmartImage from "@/components/ui/smart-image";
 
 interface Community {
   id: string;
@@ -40,14 +41,14 @@ export default memo(function CommunityCard({ community }: Props) {
     <Link to={`/communities/${community.id}`} className="block">
       <div className="premium-card overflow-hidden">
         {/* Cover image */}
-        <div className="relative h-40 overflow-hidden">
-          <img
+        <div className="relative h-40">
+          <SmartImage
             src={community.cover}
             alt={community.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
+            wrapperClassName="absolute inset-0 h-full w-full"
+            className="object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-card via-card/20 to-transparent pointer-events-none" />
 
           {/* Badges */}
           <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">

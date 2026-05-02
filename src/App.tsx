@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { lazy, Suspense } from "react";
-import { Loader2 } from "lucide-react";
+import { PageSkeleton } from "@/components/ui/content-skeleton";
 
 // Eager-loaded critical pages
 import Landing from "./pages/Landing";
@@ -72,9 +72,10 @@ const InterestsPage = lazy(() => import("./pages/seo/InterestsPage"));
 const EventPage = lazy(() => import("./pages/seo/EventPage"));
 
 function PageLoader() {
+  // Premium skeleton — keeps app shell visible, no full-screen spinner.
   return (
-    <div className="flex items-center justify-center min-h-[60vh]">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+    <div className="px-4 py-4">
+      <PageSkeleton />
     </div>
   );
 }

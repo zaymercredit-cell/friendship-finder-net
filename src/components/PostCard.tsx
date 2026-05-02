@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useState, memo } from "react";
 import { Link } from "react-router-dom";
 import PhotoGalleryLightbox from "@/components/PhotoGalleryLightbox";
+import SmartImage from "@/components/ui/smart-image";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -115,9 +116,14 @@ export default memo(function PostCard(props: PostCardProps) {
                 className={cn("relative cursor-pointer overflow-hidden", images.length === 1 ? "max-h-[400px]" : "aspect-square", images.length === 3 && idx === 0 && "row-span-2 aspect-auto")}
                 onClick={() => { setLightboxIndex(idx); setLightboxOpen(true); }}
               >
-                <img src={img} alt="" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" loading="lazy" />
+                <SmartImage
+                  src={img}
+                  alt=""
+                  wrapperClassName="h-full w-full"
+                  className="object-cover transition-transform duration-300 hover:scale-[1.02]"
+                />
                 {idx === 3 && images.length > 4 && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-none">
                     <span className="text-white text-xl font-bold">+{images.length - 4}</span>
                   </div>
                 )}

@@ -1,6 +1,6 @@
 import { Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import { Suspense } from "react";
-import { Loader2 } from "lucide-react";
+import { PageSkeleton } from "@/components/ui/content-skeleton";
 import { cn } from "@/lib/utils";
 import {
   Search, Bell, MessageCircle, Plus, Menu, X,
@@ -301,11 +301,7 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
 
         {/* Main Content */}
         <main className="flex-1 min-w-0 px-4 py-4 pb-20 md:pb-4">
-          <Suspense fallback={
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-6 w-6 animate-spin text-primary/70" />
-            </div>
-          }>
+          <Suspense fallback={<PageSkeleton />}>
             {children ?? <Outlet />}
           </Suspense>
         </main>
