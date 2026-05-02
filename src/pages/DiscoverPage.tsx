@@ -38,21 +38,30 @@ interface DiscoverCardProps {
   onMessage: (e: React.MouseEvent) => void;
   onSuperLike?: (e: React.MouseEvent) => void;
   onClick: () => void;
+  onPrefetch?: () => void;
 }
 
-function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onClick }: DiscoverCardProps) {
+const DiscoverCard = React.memo(function DiscoverCard({
+  user, score, onLike, onPass, onMessage, onSuperLike, onClick, onPrefetch,
+}: DiscoverCardProps) {
   const scoreColor = score >= 80 ? "bg-success" : score >= 60 ? "bg-primary" : "bg-muted-foreground";
 
   return (
-    <div onClick={onClick} className="premium-card overflow-hidden cursor-pointer">
-      <div className="relative aspect-[3/4] max-h-80 overflow-hidden">
-        <img
+    <div
+      onClick={onClick}
+      onMouseEnter={onPrefetch}
+      onFocus={onPrefetch}
+      onTouchStart={onPrefetch}
+      className="premium-card overflow-hidden cursor-pointer"
+    >
+      <div className="relative aspect-[3/4] max-h-80">
+        <SmartImage
           src={user.avatar}
           alt={user.name}
-          className="w-full h-full object-cover"
-          loading="lazy"
+          wrapperClassName="absolute inset-0 h-full w-full"
+          className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent pointer-events-none" />
 
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
           {user.isOnline && (
@@ -81,7 +90,7 @@ function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onC
         {user.about && (
           <p className="text-[12px] text-muted-foreground line-clamp-2 leading-snug">{user.about}</p>
         )}
-        
+
         <div className="flex flex-wrap gap-1">
           {user.interests.slice(0, 3).map(tag => {
             const isCommon = currentUser.interests.includes(tag);
@@ -93,7 +102,7 @@ function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onC
             <span className="text-[10px] text-muted-foreground/50">+{user.interests.length - 3}</span>
           )}
         </div>
-        
+
         {user.communicationGoals && user.communicationGoals.length > 0 && (
           <span className="text-[10px] text-muted-foreground flex items-center gap-1">
             <Target className="h-2.5 w-2.5 text-primary/50" />
@@ -118,7 +127,7 @@ function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onC
       </div>
     </div>
   );
-}
+});
 
 function SectionHeader({ icon: Icon, title, badge, action }: { icon: any; title: string; badge?: string; action?: React.ReactNode }) {
   return (
