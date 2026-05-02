@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo, useDeferredValue, useEffect, useRef } from "react";
 import { VirtuosoGrid } from "react-virtuoso";
 import { mockUsers, currentUser, calculateMatchScore, allInterests, communicationGoalOptions, cities, lookingForGenderOptions } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,10 @@ import { useSuperLike } from "@/hooks/useSuperLike";
 import VipPromoBanner from "@/components/VipPromoBanner";
 import AdPlaceholder from "@/components/AdPlaceholder";
 import VipPaywallModal from "@/components/VipPaywallModal";
+import SmartImage from "@/components/ui/smart-image";
+import { useSessionState, readSessionState, writeSessionState } from "@/lib/session-state";
+import { useQueryClient } from "@tanstack/react-query";
+import { prefetchProfile } from "@/lib/data-prefetch";
 
 interface DiscoverCardProps {
   user: typeof mockUsers[0];
@@ -34,21 +38,30 @@ interface DiscoverCardProps {
   onMessage: (e: React.MouseEvent) => void;
   onSuperLike?: (e: React.MouseEvent) => void;
   onClick: () => void;
+  onPrefetch?: () => void;
 }
 
-function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onClick }: DiscoverCardProps) {
+const DiscoverCard = React.memo(function DiscoverCard({
+  user, score, onLike, onPass, onMessage, onSuperLike, onClick, onPrefetch,
+}: DiscoverCardProps) {
   const scoreColor = score >= 80 ? "bg-success" : score >= 60 ? "bg-primary" : "bg-muted-foreground";
 
   return (
-    <div onClick={onClick} className="premium-card overflow-hidden cursor-pointer">
-      <div className="relative aspect-[3/4] max-h-80 overflow-hidden">
-        <img
+    <div
+      onClick={onClick}
+      onMouseEnter={onPrefetch}
+      onFocus={onPrefetch}
+      onTouchStart={onPrefetch}
+      className="premium-card overflow-hidden cursor-pointer"
+    >
+      <div className="relative aspect-[3/4] max-h-80">
+        <SmartImage
           src={user.avatar}
           alt={user.name}
-          className="w-full h-full object-cover"
-          loading="lazy"
+          wrapperClassName="absolute inset-0 h-full w-full"
+          className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent pointer-events-none" />
 
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
           {user.isOnline && (
@@ -77,7 +90,7 @@ function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onC
         {user.about && (
           <p className="text-[12px] text-muted-foreground line-clamp-2 leading-snug">{user.about}</p>
         )}
-        
+
         <div className="flex flex-wrap gap-1">
           {user.interests.slice(0, 3).map(tag => {
             const isCommon = currentUser.interests.includes(tag);
@@ -89,7 +102,7 @@ function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onC
             <span className="text-[10px] text-muted-foreground/50">+{user.interests.length - 3}</span>
           )}
         </div>
-        
+
         {user.communicationGoals && user.communicationGoals.length > 0 && (
           <span className="text-[10px] text-muted-foreground flex items-center gap-1">
             <Target className="h-2.5 w-2.5 text-primary/50" />
@@ -114,7 +127,7 @@ function DiscoverCard({ user, score, onLike, onPass, onMessage, onSuperLike, onC
       </div>
     </div>
   );
-}
+});
 
 function SectionHeader({ icon: Icon, title, badge, action }: { icon: any; title: string; badge?: string; action?: React.ReactNode }) {
   return (
@@ -133,22 +146,36 @@ function SectionHeader({ icon: Icon, title, badge, action }: { icon: any; title:
 
 export default function DiscoverPage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { user } = useAuth();
   const startConversation = useStartConversation();
   const { canLike, remaining, isVip } = useDailyLikes();
   const { canSuperLike, sendSuperLike } = useSuperLike();
   const [showPaywall, setShowPaywall] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filterCity, setFilterCity] = useState<string>("all");
-  const [filterGender, setFilterGender] = useState<string>("any");
-  const [ageRange, setAgeRange] = useState([18, 60]);
-  const [filterOnline, setFilterOnline] = useState(false);
-  const [filterWithPhoto, setFilterWithPhoto] = useState(false);
-  const [filterReadyMeet, setFilterReadyMeet] = useState(false);
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+
+  // ── Persisted UI state — survives back/forward navigation in-session.
+  const [showFilters, setShowFilters] = useSessionState("discover.showFilters", false);
+  const [filterCity, setFilterCity] = useSessionState<string>("discover.city", "all");
+  const [filterGender, setFilterGender] = useSessionState<string>("discover.gender", "any");
+  const [ageRange, setAgeRange] = useSessionState<number[]>("discover.age", [18, 60]);
+  const [filterOnline, setFilterOnline] = useSessionState("discover.online", false);
+  const [filterWithPhoto, setFilterWithPhoto] = useSessionState("discover.photo", false);
+  const [filterReadyMeet, setFilterReadyMeet] = useSessionState("discover.meet", false);
+  const [selectedGoals, setSelectedGoals] = useSessionState<string[]>("discover.goals", []);
+  const [selectedInterests, setSelectedInterests] = useSessionState<string[]>("discover.interests", []);
   const [passedIds, setPassedIds] = useState<Set<string>>(new Set());
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+
+  // ── Instant filtering: filter inputs update synchronously, the heavy
+  //    list recomputation runs at lower priority via useDeferredValue,
+  //    keeping checkboxes/sliders fully responsive even on huge datasets.
+  const deferredCity = useDeferredValue(filterCity);
+  const deferredGender = useDeferredValue(filterGender);
+  const deferredAge = useDeferredValue(ageRange);
+  const deferredOnline = useDeferredValue(filterOnline);
+  const deferredReadyMeet = useDeferredValue(filterReadyMeet);
+  const deferredGoals = useDeferredValue(selectedGoals);
+  const deferredInterests = useDeferredValue(selectedInterests);
 
   const scoredUsers = useMemo(() => {
     return mockUsers
@@ -158,18 +185,47 @@ export default function DiscoverPage() {
   }, []);
 
   const filteredUsers = useMemo(() => {
+    const goalsSet = deferredGoals.length ? new Set(deferredGoals) : null;
+    const interestsSet = deferredInterests.length ? new Set(deferredInterests) : null;
     return scoredUsers.filter(({ user }) => {
       if (passedIds.has(user.id) || likedIds.has(user.id)) return false;
-      if (filterCity !== "all" && user.city !== filterCity) return false;
-      if (filterGender !== "any" && user.gender !== filterGender) return false;
-      if (user.age && (user.age < ageRange[0] || user.age > ageRange[1])) return false;
-      if (filterOnline && !user.isOnline) return false;
-      if (filterReadyMeet && !user.readyForMeetings) return false;
-      if (selectedGoals.length > 0 && !(user.communicationGoals || []).some(g => selectedGoals.includes(g))) return false;
-      if (selectedInterests.length > 0 && !user.interests.some(i => selectedInterests.includes(i))) return false;
+      if (deferredCity !== "all" && user.city !== deferredCity) return false;
+      if (deferredGender !== "any" && user.gender !== deferredGender) return false;
+      if (user.age && (user.age < deferredAge[0] || user.age > deferredAge[1])) return false;
+      if (deferredOnline && !user.isOnline) return false;
+      if (deferredReadyMeet && !user.readyForMeetings) return false;
+      if (goalsSet && !(user.communicationGoals || []).some(g => goalsSet.has(g))) return false;
+      if (interestsSet && !user.interests.some(i => interestsSet.has(i))) return false;
       return true;
     });
-  }, [scoredUsers, filterCity, filterGender, ageRange, filterOnline, filterWithPhoto, filterReadyMeet, selectedGoals, selectedInterests, passedIds, likedIds]);
+  }, [scoredUsers, deferredCity, deferredGender, deferredAge, deferredOnline, deferredReadyMeet, deferredGoals, deferredInterests, passedIds, likedIds]);
+
+  // ── Restore + persist window scroll position across back/forward.
+  const SCROLL_KEY = "discover.scrollY";
+  useEffect(() => {
+    const y = readSessionState<number>(SCROLL_KEY, 0);
+    if (y > 0) {
+      // Wait one frame so virtualized content has measured before scrolling.
+      requestAnimationFrame(() => window.scrollTo(0, y));
+    }
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        writeSessionState(SCROLL_KEY, window.scrollY);
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Predictive prefetch helper for hovered/touched profile cards.
+  const warmProfile = useRef((username?: string) => {
+    if (username) prefetchProfile(qc, username);
+  }).current;
+
 
   const highCompatibility = filteredUsers.filter(({ score }) => score >= 80);
   const onlineUsers = filteredUsers.filter(({ user }) => user.isOnline);
@@ -362,10 +418,12 @@ export default function DiscoverPage() {
                   key={u.id + "-live"}
                   className="relative rounded-xl overflow-hidden cursor-pointer"
                   onClick={() => navigate(`/profile/${u.username}`)}
+                  onMouseEnter={() => warmProfile(u.username)}
+                  onTouchStart={() => warmProfile(u.username)}
                 >
-                  <div className="aspect-[3/4] max-h-48">
-                    <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" loading="lazy" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  <div className="aspect-[3/4] max-h-48 relative">
+                    <SmartImage src={u.avatar} alt={u.name} wrapperClassName="absolute inset-0 h-full w-full" className="object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
                   </div>
                   <div className="absolute top-2 left-2 flex items-center gap-1 bg-destructive/90 text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-md">
                     <span className="h-1.5 w-1.5 rounded-full bg-white" />
@@ -614,21 +672,29 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {/* ═══ REST — virtualized ═══ */}
+      {/* ═══ REST — virtualized with adaptive preload ═══ */}
       {restUsers.length > 0 && (
         <div>
           <SectionHeader icon={Users} title="Ещё анкеты" badge={`${restUsers.length}`} />
           <VirtuosoGrid
             useWindowScroll
             data={restUsers}
+            // Render ~2 rows above/below viewport for buttery smooth scroll
+            // and so SmartImage can start fetching the next batch (300px IO
+            // margin on top of this) — instant pop-in even on slow networks.
+            overscan={{ main: 800, reverse: 600 }}
+            increaseViewportBy={{ top: 400, bottom: 800 }}
             listClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            computeItemKey={(_, item) => item.user.id}
             itemContent={(_, { user, score }) => (
               <DiscoverCard
-                key={user.id} user={user} score={score}
+                user={user}
+                score={score}
                 onClick={() => navigate(`/profile/${user.username}`)}
                 onLike={(e) => handleLike(e, user.id)}
                 onPass={(e) => handlePass(e, user.id)}
                 onMessage={(e) => handleMessage(e, user.id)}
+                onPrefetch={() => warmProfile(user.username)}
               />
             )}
           />
