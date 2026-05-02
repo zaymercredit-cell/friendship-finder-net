@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useDeferredValue, useEffect, useRef } from "react";
 import { VirtuosoGrid } from "react-virtuoso";
 import { mockUsers, currentUser, calculateMatchScore, allInterests, communicationGoalOptions, cities, lookingForGenderOptions } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,10 @@ import { useSuperLike } from "@/hooks/useSuperLike";
 import VipPromoBanner from "@/components/VipPromoBanner";
 import AdPlaceholder from "@/components/AdPlaceholder";
 import VipPaywallModal from "@/components/VipPaywallModal";
+import SmartImage from "@/components/ui/smart-image";
+import { useSessionState, readSessionState, writeSessionState } from "@/lib/session-state";
+import { useQueryClient } from "@tanstack/react-query";
+import { prefetchProfile } from "@/lib/data-prefetch";
 
 interface DiscoverCardProps {
   user: typeof mockUsers[0];
