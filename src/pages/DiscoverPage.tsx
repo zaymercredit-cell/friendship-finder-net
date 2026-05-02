@@ -418,10 +418,12 @@ export default function DiscoverPage() {
                   key={u.id + "-live"}
                   className="relative rounded-xl overflow-hidden cursor-pointer"
                   onClick={() => navigate(`/profile/${u.username}`)}
+                  onMouseEnter={() => warmProfile(u.username)}
+                  onTouchStart={() => warmProfile(u.username)}
                 >
-                  <div className="aspect-[3/4] max-h-48">
-                    <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" loading="lazy" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                  <div className="aspect-[3/4] max-h-48 relative">
+                    <SmartImage src={u.avatar} alt={u.name} wrapperClassName="absolute inset-0 h-full w-full" className="object-cover" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent pointer-events-none" />
                   </div>
                   <div className="absolute top-2 left-2 flex items-center gap-1 bg-destructive/90 text-destructive-foreground text-[9px] font-bold px-1.5 py-0.5 rounded-md">
                     <span className="h-1.5 w-1.5 rounded-full bg-white" />
