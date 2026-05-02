@@ -672,21 +672,29 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {/* ═══ REST — virtualized ═══ */}
+      {/* ═══ REST — virtualized with adaptive preload ═══ */}
       {restUsers.length > 0 && (
         <div>
           <SectionHeader icon={Users} title="Ещё анкеты" badge={`${restUsers.length}`} />
           <VirtuosoGrid
             useWindowScroll
             data={restUsers}
+            // Render ~2 rows above/below viewport for buttery smooth scroll
+            // and so SmartImage can start fetching the next batch (300px IO
+            // margin on top of this) — instant pop-in even on slow networks.
+            overscan={{ main: 800, reverse: 600 }}
+            increaseViewportBy={{ top: 400, bottom: 800 }}
             listClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            computeItemKey={(_, item) => item.user.id}
             itemContent={(_, { user, score }) => (
               <DiscoverCard
-                key={user.id} user={user} score={score}
+                user={user}
+                score={score}
                 onClick={() => navigate(`/profile/${user.username}`)}
                 onLike={(e) => handleLike(e, user.id)}
                 onPass={(e) => handlePass(e, user.id)}
                 onMessage={(e) => handleMessage(e, user.id)}
+                onPrefetch={() => warmProfile(user.username)}
               />
             )}
           />
