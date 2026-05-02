@@ -146,22 +146,36 @@ function SectionHeader({ icon: Icon, title, badge, action }: { icon: any; title:
 
 export default function DiscoverPage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { user } = useAuth();
   const startConversation = useStartConversation();
   const { canLike, remaining, isVip } = useDailyLikes();
   const { canSuperLike, sendSuperLike } = useSuperLike();
   const [showPaywall, setShowPaywall] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [filterCity, setFilterCity] = useState<string>("all");
-  const [filterGender, setFilterGender] = useState<string>("any");
-  const [ageRange, setAgeRange] = useState([18, 60]);
-  const [filterOnline, setFilterOnline] = useState(false);
-  const [filterWithPhoto, setFilterWithPhoto] = useState(false);
-  const [filterReadyMeet, setFilterReadyMeet] = useState(false);
-  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
-  const [selectedInterests, setSelectedInterests] = useState<string[]>([]);
+
+  // ── Persisted UI state — survives back/forward navigation in-session.
+  const [showFilters, setShowFilters] = useSessionState("discover.showFilters", false);
+  const [filterCity, setFilterCity] = useSessionState<string>("discover.city", "all");
+  const [filterGender, setFilterGender] = useSessionState<string>("discover.gender", "any");
+  const [ageRange, setAgeRange] = useSessionState<number[]>("discover.age", [18, 60]);
+  const [filterOnline, setFilterOnline] = useSessionState("discover.online", false);
+  const [filterWithPhoto, setFilterWithPhoto] = useSessionState("discover.photo", false);
+  const [filterReadyMeet, setFilterReadyMeet] = useSessionState("discover.meet", false);
+  const [selectedGoals, setSelectedGoals] = useSessionState<string[]>("discover.goals", []);
+  const [selectedInterests, setSelectedInterests] = useSessionState<string[]>("discover.interests", []);
   const [passedIds, setPassedIds] = useState<Set<string>>(new Set());
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
+
+  // ── Instant filtering: filter inputs update synchronously, the heavy
+  //    list recomputation runs at lower priority via useDeferredValue,
+  //    keeping checkboxes/sliders fully responsive even on huge datasets.
+  const deferredCity = useDeferredValue(filterCity);
+  const deferredGender = useDeferredValue(filterGender);
+  const deferredAge = useDeferredValue(ageRange);
+  const deferredOnline = useDeferredValue(filterOnline);
+  const deferredReadyMeet = useDeferredValue(filterReadyMeet);
+  const deferredGoals = useDeferredValue(selectedGoals);
+  const deferredInterests = useDeferredValue(selectedInterests);
 
   const scoredUsers = useMemo(() => {
     return mockUsers
@@ -171,18 +185,47 @@ export default function DiscoverPage() {
   }, []);
 
   const filteredUsers = useMemo(() => {
+    const goalsSet = deferredGoals.length ? new Set(deferredGoals) : null;
+    const interestsSet = deferredInterests.length ? new Set(deferredInterests) : null;
     return scoredUsers.filter(({ user }) => {
       if (passedIds.has(user.id) || likedIds.has(user.id)) return false;
-      if (filterCity !== "all" && user.city !== filterCity) return false;
-      if (filterGender !== "any" && user.gender !== filterGender) return false;
-      if (user.age && (user.age < ageRange[0] || user.age > ageRange[1])) return false;
-      if (filterOnline && !user.isOnline) return false;
-      if (filterReadyMeet && !user.readyForMeetings) return false;
-      if (selectedGoals.length > 0 && !(user.communicationGoals || []).some(g => selectedGoals.includes(g))) return false;
-      if (selectedInterests.length > 0 && !user.interests.some(i => selectedInterests.includes(i))) return false;
+      if (deferredCity !== "all" && user.city !== deferredCity) return false;
+      if (deferredGender !== "any" && user.gender !== deferredGender) return false;
+      if (user.age && (user.age < deferredAge[0] || user.age > deferredAge[1])) return false;
+      if (deferredOnline && !user.isOnline) return false;
+      if (deferredReadyMeet && !user.readyForMeetings) return false;
+      if (goalsSet && !(user.communicationGoals || []).some(g => goalsSet.has(g))) return false;
+      if (interestsSet && !user.interests.some(i => interestsSet.has(i))) return false;
       return true;
     });
-  }, [scoredUsers, filterCity, filterGender, ageRange, filterOnline, filterWithPhoto, filterReadyMeet, selectedGoals, selectedInterests, passedIds, likedIds]);
+  }, [scoredUsers, deferredCity, deferredGender, deferredAge, deferredOnline, deferredReadyMeet, deferredGoals, deferredInterests, passedIds, likedIds]);
+
+  // ── Restore + persist window scroll position across back/forward.
+  const SCROLL_KEY = "discover.scrollY";
+  useEffect(() => {
+    const y = readSessionState<number>(SCROLL_KEY, 0);
+    if (y > 0) {
+      // Wait one frame so virtualized content has measured before scrolling.
+      requestAnimationFrame(() => window.scrollTo(0, y));
+    }
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        writeSessionState(SCROLL_KEY, window.scrollY);
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Predictive prefetch helper for hovered/touched profile cards.
+  const warmProfile = useRef((username?: string) => {
+    if (username) prefetchProfile(qc, username);
+  }).current;
+
 
   const highCompatibility = filteredUsers.filter(({ score }) => score >= 80);
   const onlineUsers = filteredUsers.filter(({ user }) => user.isOnline);
