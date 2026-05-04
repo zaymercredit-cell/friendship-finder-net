@@ -101,7 +101,6 @@ function AdminUsersInner() {
       });
       return counts;
     },
-    enabled: !!isAdmin,
   });
 
   // Ban user mutation
