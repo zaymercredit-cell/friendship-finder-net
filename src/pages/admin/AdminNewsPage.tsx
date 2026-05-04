@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageSkeleton } from "@/components/ui/content-skeleton";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useAdminNewsList, useCreateNews, useUpdateNews, usePublishNews, generateSlug, NewsArticle } from "@/hooks/useNews";
 import { Button } from "@/components/ui/button";
@@ -106,8 +107,8 @@ export default function AdminNewsPage() {
 
   const filtered = catFilter === "all" ? articles : articles.filter(a => a.category === catFilter);
 
-  if (adminLoading) return <div className="flex items-center justify-center min-h-screen"><div className="h-8 w-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-  if (!isAdmin) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">Доступ запрещён</div>;
+  if (adminLoading) return <div className="max-w-7xl mx-auto py-8 px-4"><PageSkeleton /></div>;
+  if (!isAdmin) return <div className="min-h-[60vh] flex items-center justify-center text-muted-foreground">Доступ запрещён</div>;
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4">

@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { useState, useMemo, useDeferredValue } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  Users, Search, Loader2, Ban, Eye, Shield, CheckCircle, 
-  XCircle, AlertTriangle, MoreHorizontal, UserX, Mail
+import {
+  Users, Search, Loader2, Ban, Eye, CheckCircle,
+  MoreHorizontal,
 } from "lucide-react";
+import { AdminGuard, AdminHeader, AdminTableSkeleton, FilterChip } from "@/components/admin/AdminShell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,12 +45,23 @@ interface Profile {
   created_at: string;
 }
 
+type StatusFilter = "all" | "online" | "vip" | "verified" | "risk" | "banned";
+
 export default function AdminUsersPage() {
-  const { data: isAdmin, isLoading: adminLoading } = useAdminCheck();
+  return (
+    <AdminGuard>
+      <AdminUsersInner />
+    </AdminGuard>
+  );
+}
+
+function AdminUsersInner() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  
+
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [banReason, setBanReason] = useState("");
@@ -58,7 +69,7 @@ export default function AdminUsersPage() {
 
   // Fetch users
   const { data: users, isLoading } = useQuery({
-    queryKey: ["admin-users", search],
+    queryKey: ["admin-users", deferredSearch],
     queryFn: async () => {
       let query = supabase
         .from("profiles")
@@ -66,15 +77,14 @@ export default function AdminUsersPage() {
         .order("created_at", { ascending: false })
         .limit(100);
 
-      if (search) {
-        query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,username.ilike.%${search}%`);
+      if (deferredSearch) {
+        query = query.or(`first_name.ilike.%${deferredSearch}%,last_name.ilike.%${deferredSearch}%,username.ilike.%${deferredSearch}%`);
       }
 
       const { data, error } = await query;
       if (error) throw error;
       return (data || []) as Profile[];
     },
-    enabled: !!isAdmin,
   });
 
   // Fetch reports count per user
@@ -91,7 +101,6 @@ export default function AdminUsersPage() {
       });
       return counts;
     },
-    enabled: !!isAdmin,
   });
 
   // Ban user mutation
@@ -169,59 +178,71 @@ export default function AdminUsersPage() {
     });
   };
 
-  if (adminLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const filteredUsers = useMemo(() => {
+    const list = users || [];
+    if (statusFilter === "all") return list;
+    return list.filter((p) => {
+      switch (statusFilter) {
+        case "online": return p.is_online;
+        case "vip": return p.is_vip;
+        case "verified": return p.is_verified;
+        case "banned": return p.is_banned;
+        case "risk": return (reportCounts?.[p.user_id] || 0) > 0 || (p.trust_score ?? 100) < 40;
+        default: return true;
+      }
+    });
+  }, [users, statusFilter, reportCounts]);
 
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
-        Доступ запрещён
-      </div>
-    );
-  }
+  const counts = useMemo(() => {
+    const list = users || [];
+    return {
+      all: list.length,
+      online: list.filter((p) => p.is_online).length,
+      vip: list.filter((p) => p.is_vip).length,
+      verified: list.filter((p) => p.is_verified).length,
+      risk: list.filter((p) => (reportCounts?.[p.user_id] || 0) > 0 || (p.trust_score ?? 100) < 40).length,
+      banned: list.filter((p) => p.is_banned).length,
+    };
+  }, [users, reportCounts]);
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <Users className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Пользователи</h1>
-            <p className="text-sm text-muted-foreground">{users?.length || 0} пользователей</p>
-          </div>
-        </div>
-      </div>
+    <div className="max-w-6xl mx-auto py-6 sm:py-8 px-4 space-y-6">
+      <AdminHeader
+        icon={Users}
+        title="Пользователи"
+        subtitle={`${filteredUsers.length} из ${users?.length || 0}`}
+      />
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Поиск по имени или username..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search + Filters */}
+      <div className="space-y-3 animate-fade-in">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Поиск по имени или username..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <FilterChip active={statusFilter === "all"} onClick={() => setStatusFilter("all")} count={counts.all}>Все</FilterChip>
+          <FilterChip active={statusFilter === "online"} onClick={() => setStatusFilter("online")} count={counts.online} tone="success">Онлайн</FilterChip>
+          <FilterChip active={statusFilter === "vip"} onClick={() => setStatusFilter("vip")} count={counts.vip}>VIP</FilterChip>
+          <FilterChip active={statusFilter === "verified"} onClick={() => setStatusFilter("verified")} count={counts.verified}>Верифицированные</FilterChip>
+          <FilterChip active={statusFilter === "risk"} onClick={() => setStatusFilter("risk")} count={counts.risk} tone="warning">Риск / Жалобы</FilterChip>
+          <FilterChip active={statusFilter === "banned"} onClick={() => setStatusFilter("banned")} count={counts.banned} tone="danger">Заблокированные</FilterChip>
+        </div>
       </div>
 
       {/* Table */}
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : !users?.length ? (
-        <div className="text-center py-12 text-muted-foreground">
+        <AdminTableSkeleton cols={7} rows={8} />
+      ) : !filteredUsers.length ? (
+        <div className="text-center py-16 text-muted-foreground border border-dashed border-border/60 rounded-2xl bg-card/30 animate-fade-in">
           Пользователи не найдены
         </div>
       ) : (
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border/60 overflow-hidden animate-fade-in">
           <Table>
             <TableHeader>
               <TableRow>
@@ -235,7 +256,7 @@ export default function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((profile) => {
+              {filteredUsers.map((profile) => {
                 const reportsOnUser = reportCounts?.[profile.user_id] || 0;
                 return (
                   <TableRow key={profile.id} className={profile.is_banned ? "opacity-60" : ""}>

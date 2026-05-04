@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PageSkeleton } from "@/components/ui/content-skeleton";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { 
   useSafetyAlerts, 
@@ -127,17 +128,13 @@ export default function AdminSafetyAlertsPage() {
 
   if (adminLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <div className="max-w-7xl mx-auto py-8 px-4"><PageSkeleton /></div>
     );
   }
 
   if (!isAdmin) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
-        Доступ запрещён
-      </div>
+      <div className="min-h-[60vh] flex items-center justify-center text-muted-foreground">Доступ запрещён</div>
     );
   }
 
