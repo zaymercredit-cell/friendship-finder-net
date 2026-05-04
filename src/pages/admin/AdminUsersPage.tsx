@@ -45,12 +45,23 @@ interface Profile {
   created_at: string;
 }
 
+type StatusFilter = "all" | "online" | "vip" | "verified" | "risk" | "banned";
+
 export default function AdminUsersPage() {
-  const { data: isAdmin, isLoading: adminLoading } = useAdminCheck();
+  return (
+    <AdminGuard>
+      <AdminUsersInner />
+    </AdminGuard>
+  );
+}
+
+function AdminUsersInner() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  
+
   const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [banDialogOpen, setBanDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
   const [banReason, setBanReason] = useState("");
