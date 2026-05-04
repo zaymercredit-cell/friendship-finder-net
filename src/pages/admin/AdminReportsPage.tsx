@@ -122,7 +122,7 @@ export default function AdminReportsPage() {
   );
 
   if (adminLoading || isLoading) return <div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  if (!isAdmin) return <div className="flex items-center justify-center min-h-screen text-muted-foreground">Доступ запрещён</div>;
+  if (!isAdmin) return <div className="min-h-[60vh] flex items-center justify-center text-muted-foreground">Доступ запрещён</div>;
 
   return (
     <div className="max-w-6xl mx-auto py-8 px-4 space-y-6">

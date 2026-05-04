@@ -1,4 +1,5 @@
 import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { PageSkeleton } from "@/components/ui/content-skeleton";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { CalendarDays, Loader2, Trash2, Eye, Users, MapPin, MoreHorizontal } from "lucide-react";
@@ -62,10 +63,10 @@ export default function AdminEventsPage() {
   });
 
   if (adminLoading) {
-    return <div className="flex items-center justify-center min-h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <div className="max-w-7xl mx-auto py-8 px-4"><PageSkeleton /></div>;
   }
   if (!isAdmin) {
-    return <div className="flex items-center justify-center min-h-screen text-muted-foreground">Доступ запрещён</div>;
+    return <div className="min-h-[60vh] flex items-center justify-center text-muted-foreground">Доступ запрещён</div>;
   }
 
   return (
