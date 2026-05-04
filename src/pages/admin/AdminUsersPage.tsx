@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { useAdminCheck } from "@/hooks/useAdminCheck";
+import { useState, useMemo, useDeferredValue } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { 
-  Users, Search, Loader2, Ban, Eye, Shield, CheckCircle, 
-  XCircle, AlertTriangle, MoreHorizontal, UserX, Mail
+import {
+  Users, Search, Loader2, Ban, Eye, CheckCircle,
+  MoreHorizontal,
 } from "lucide-react";
+import { AdminGuard, AdminHeader, AdminTableSkeleton, FilterChip } from "@/components/admin/AdminShell";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
