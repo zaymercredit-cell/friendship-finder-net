@@ -256,7 +256,7 @@ function AdminUsersInner() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((profile) => {
+              {filteredUsers.map((profile) => {
                 const reportsOnUser = reportCounts?.[profile.user_id] || 0;
                 return (
                   <TableRow key={profile.id} className={profile.is_banned ? "opacity-60" : ""}>
