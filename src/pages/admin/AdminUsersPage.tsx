@@ -69,7 +69,7 @@ function AdminUsersInner() {
 
   // Fetch users
   const { data: users, isLoading } = useQuery({
-    queryKey: ["admin-users", search],
+    queryKey: ["admin-users", deferredSearch],
     queryFn: async () => {
       let query = supabase
         .from("profiles")
@@ -77,15 +77,14 @@ function AdminUsersInner() {
         .order("created_at", { ascending: false })
         .limit(100);
 
-      if (search) {
-        query = query.or(`first_name.ilike.%${search}%,last_name.ilike.%${search}%,username.ilike.%${search}%`);
+      if (deferredSearch) {
+        query = query.or(`first_name.ilike.%${deferredSearch}%,last_name.ilike.%${deferredSearch}%,username.ilike.%${deferredSearch}%`);
       }
 
       const { data, error } = await query;
       if (error) throw error;
       return (data || []) as Profile[];
     },
-    enabled: !!isAdmin,
   });
 
   // Fetch reports count per user
