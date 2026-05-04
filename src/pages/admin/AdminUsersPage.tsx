@@ -178,59 +178,71 @@ function AdminUsersInner() {
     });
   };
 
-  if (adminLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  const filteredUsers = useMemo(() => {
+    const list = users || [];
+    if (statusFilter === "all") return list;
+    return list.filter((p) => {
+      switch (statusFilter) {
+        case "online": return p.is_online;
+        case "vip": return p.is_vip;
+        case "verified": return p.is_verified;
+        case "banned": return p.is_banned;
+        case "risk": return (reportCounts?.[p.user_id] || 0) > 0 || (p.trust_score ?? 100) < 40;
+        default: return true;
+      }
+    });
+  }, [users, statusFilter, reportCounts]);
 
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
-        Доступ запрещён
-      </div>
-    );
-  }
+  const counts = useMemo(() => {
+    const list = users || [];
+    return {
+      all: list.length,
+      online: list.filter((p) => p.is_online).length,
+      vip: list.filter((p) => p.is_vip).length,
+      verified: list.filter((p) => p.is_verified).length,
+      risk: list.filter((p) => (reportCounts?.[p.user_id] || 0) > 0 || (p.trust_score ?? 100) < 40).length,
+      banned: list.filter((p) => p.is_banned).length,
+    };
+  }, [users, reportCounts]);
 
   return (
-    <div className="max-w-6xl mx-auto py-8 px-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <Users className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Пользователи</h1>
-            <p className="text-sm text-muted-foreground">{users?.length || 0} пользователей</p>
-          </div>
-        </div>
-      </div>
+    <div className="max-w-6xl mx-auto py-6 sm:py-8 px-4 space-y-6">
+      <AdminHeader
+        icon={Users}
+        title="Пользователи"
+        subtitle={`${filteredUsers.length} из ${users?.length || 0}`}
+      />
 
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Поиск по имени или username..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10"
-        />
+      {/* Search + Filters */}
+      <div className="space-y-3 animate-fade-in">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <Input
+            placeholder="Поиск по имени или username..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <FilterChip active={statusFilter === "all"} onClick={() => setStatusFilter("all")} count={counts.all}>Все</FilterChip>
+          <FilterChip active={statusFilter === "online"} onClick={() => setStatusFilter("online")} count={counts.online} tone="success">Онлайн</FilterChip>
+          <FilterChip active={statusFilter === "vip"} onClick={() => setStatusFilter("vip")} count={counts.vip}>VIP</FilterChip>
+          <FilterChip active={statusFilter === "verified"} onClick={() => setStatusFilter("verified")} count={counts.verified}>Верифицированные</FilterChip>
+          <FilterChip active={statusFilter === "risk"} onClick={() => setStatusFilter("risk")} count={counts.risk} tone="warning">Риск / Жалобы</FilterChip>
+          <FilterChip active={statusFilter === "banned"} onClick={() => setStatusFilter("banned")} count={counts.banned} tone="danger">Заблокированные</FilterChip>
+        </div>
       </div>
 
       {/* Table */}
       {isLoading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : !users?.length ? (
-        <div className="text-center py-12 text-muted-foreground">
+        <AdminTableSkeleton cols={7} rows={8} />
+      ) : !filteredUsers.length ? (
+        <div className="text-center py-16 text-muted-foreground border border-dashed border-border/60 rounded-2xl bg-card/30 animate-fade-in">
           Пользователи не найдены
         </div>
       ) : (
-        <div className="bg-card rounded-xl border border-border overflow-hidden">
+        <div className="bg-card rounded-2xl border border-border/60 overflow-hidden animate-fade-in">
           <Table>
             <TableHeader>
               <TableRow>
