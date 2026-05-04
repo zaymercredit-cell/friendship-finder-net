@@ -113,7 +113,14 @@ function SafetyAlertMini({ alert }: { alert: any }) {
 }
 
 export default function AdminDashboard() {
-  const { data: isAdmin, isLoading: adminLoading } = useAdminCheck();
+  return (
+    <AdminGuard>
+      <AdminDashboardInner />
+    </AdminGuard>
+  );
+}
+
+function AdminDashboardInner() {
   const { data: alertStats } = useSafetyAlertStats();
   const { data: msgStats } = useFlaggedMessageStats();
 
@@ -159,7 +166,6 @@ export default function AdminDashboard() {
         todayUsers: todayUsersCount || 0,
       };
     },
-    enabled: !!isAdmin,
   });
 
   // Fetch recent alerts
@@ -174,7 +180,6 @@ export default function AdminDashboard() {
         .limit(5);
       return data || [];
     },
-    enabled: !!isAdmin,
   });
 
   // Fetch recent reports
@@ -189,43 +194,21 @@ export default function AdminDashboard() {
         .limit(5);
       return data || [];
     },
-    enabled: !!isAdmin,
   });
 
-  if (adminLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
-        Доступ запрещён
-      </div>
-    );
-  }
-
   return (
-    <div className="max-w-7xl mx-auto py-8 px-4 space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-primary/10">
-            <Shield className="h-8 w-8 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Админ-панель</h1>
-            <p className="text-sm text-muted-foreground">Центр управления ВДрузьях</p>
-          </div>
-        </div>
-        <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
-          <Zap className="h-3 w-3 mr-1" />
-          AI Safety Active
-        </Badge>
-      </div>
+    <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 space-y-8">
+      <AdminHeader
+        icon={Shield}
+        title="Админ-панель"
+        subtitle="Центр управления ВДрузьях"
+        actions={
+          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+            <Zap className="h-3 w-3 mr-1" />
+            AI Safety Active
+          </Badge>
+        }
+      />
 
       {/* Critical Alerts Banner */}
       {(alertStats?.critical || 0) > 0 && (
