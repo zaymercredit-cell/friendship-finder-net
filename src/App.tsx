@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { lazy, Suspense } from "react";
 import { PageSkeleton } from "@/components/ui/content-skeleton";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Eager-loaded critical pages
 import Landing from "./pages/Landing";
@@ -106,6 +107,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <ErrorBoundary scope="root">
           <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Public / SEO */}
@@ -182,6 +184,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
+          </ErrorBoundary>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
