@@ -24,6 +24,7 @@ import AiCoachMessengerPanel from "@/components/ai/AiCoachMessengerPanel";
 import ChatSafetyAlert from "@/components/trust/ChatSafetyAlert";
 import AiConversationStarters from "@/components/ai/AiConversationStarters";
 import AiSmartReplies from "@/components/ai/AiSmartReplies";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Big virtual offset → lets us prepend (older) pages to the front without
 // shifting visible items (Virtuoso anchors via firstItemIndex).
@@ -201,11 +202,13 @@ export default function MessagesPage() {
             <>
               <ChatHeader conv={selectedConv} onBack={goBack} isTyping={isAnyoneTyping} />
 
-              <ChatSafetyAlert
-                otherUserVerified={(selectedConv.otherUser as any).is_verified}
-                otherUserTrustScore={(selectedConv.otherUser as any).trust_score}
-                isNewConversation={!messages || messages.length <= 2}
-              />
+              <ErrorBoundary scope="chat-safety">
+                <ChatSafetyAlert
+                  otherUserVerified={(selectedConv.otherUser as any).is_verified}
+                  otherUserTrustScore={(selectedConv.otherUser as any).trust_score}
+                  isNewConversation={!messages || messages.length <= 2}
+                />
+              </ErrorBoundary>
 
               {/* Virtualized messages */}
               <div className="flex-1 min-h-0 relative">
@@ -214,94 +217,104 @@ export default function MessagesPage() {
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   </div>
                 )}
-                {prepared.length > 0 ? (
-                  <Virtuoso
-                    ref={virtuosoRef}
-                    data={prepared}
-                    firstItemIndex={firstItemIndexRef.current}
-                    initialTopMostItemIndex={prepared.length - 1}
-                    startReached={handleStartReached}
-                    followOutput={(isAtBottom) => (isAtBottom ? "smooth" : false)}
-                    atBottomStateChange={(at) => { atBottomRef.current = at; }}
-                    increaseViewportBy={{ top: 600, bottom: 600 }}
-                    className="px-4 md:px-6 py-3"
-                    itemContent={(_, item) => (
-                      <MessageBubble
-                        msg={item.msg}
-                        isMine={item.msg.sender_id === user?.id}
-                        showDate={item.showDate}
-                        groupedWithNext={item.groupedWithNext}
-                        otherLastReadAt={selectedConv.otherLastReadAt}
-                      />
-                    )}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full gap-4 px-2">
-                    <p className="text-[13.5px] text-muted-foreground/70">
-                      Напишите первое сообщение, чтобы начать общение
-                    </p>
-                    <AiConversationStarters
-                      targetUserId={selectedConv.otherUser.user_id}
-                      targetName={selectedConv.otherUser.first_name}
-                      onSelectStarter={(text) => setAiText(text)}
-                      className="w-full max-w-sm"
+                <ErrorBoundary scope="chat-messages">
+                  {prepared.length > 0 ? (
+                    <Virtuoso
+                      ref={virtuosoRef}
+                      data={prepared}
+                      firstItemIndex={firstItemIndexRef.current}
+                      initialTopMostItemIndex={prepared.length - 1}
+                      startReached={handleStartReached}
+                      followOutput={(isAtBottom) => (isAtBottom ? "smooth" : false)}
+                      atBottomStateChange={(at) => { atBottomRef.current = at; }}
+                      increaseViewportBy={{ top: 600, bottom: 600 }}
+                      className="px-4 md:px-6 py-3"
+                      itemContent={(_, item) => (
+                        <MessageBubble
+                          msg={item.msg}
+                          isMine={item.msg.sender_id === user?.id}
+                          showDate={item.showDate}
+                          groupedWithNext={item.groupedWithNext}
+                          otherLastReadAt={selectedConv.otherLastReadAt}
+                        />
+                      )}
                     />
-                  </div>
-                )}
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full gap-4 px-2">
+                      <p className="text-[13.5px] text-muted-foreground/70">
+                        Напишите первое сообщение, чтобы начать общение
+                      </p>
+                      <ErrorBoundary scope="ai-starters">
+                        <AiConversationStarters
+                          targetUserId={selectedConv.otherUser.user_id}
+                          targetName={selectedConv.otherUser.first_name}
+                          onSelectStarter={(text) => setAiText(text)}
+                          className="w-full max-w-sm"
+                        />
+                      </ErrorBoundary>
+                    </div>
+                  )}
+                </ErrorBoundary>
               </div>
 
               {/* AI Coach Panel */}
               {selectedConv && (
-                <AiCoachMessengerPanel
-                  targetUserId={selectedConv.otherUser.user_id}
-                  targetName={selectedConv.otherUser.first_name}
-                  lastMessages={(messages || []).slice(-6).map(m => ({
-                    text: m.text || "",
-                    isMine: m.sender_id === user?.id,
-                  }))}
-                  onSelect={(text) => setAiText(text)}
-                />
+                <ErrorBoundary scope="ai-coach">
+                  <AiCoachMessengerPanel
+                    targetUserId={selectedConv.otherUser.user_id}
+                    targetName={selectedConv.otherUser.first_name}
+                    lastMessages={(messages || []).slice(-6).map(m => ({
+                      text: m.text || "",
+                      isMine: m.sender_id === user?.id,
+                    }))}
+                    onSelect={(text) => setAiText(text)}
+                  />
+                </ErrorBoundary>
               )}
 
               {/* Smart replies */}
               {selectedConv && messages && messages.length > 2 && (
-                <div className="px-3 py-1 border-t border-border/20">
-                  <AiSmartReplies
-                    targetUserId={selectedConv.otherUser.user_id}
-                    lastMessages={(messages || []).slice(-6).map(m => ({
-                      text: m.text || "",
-                      isMine: m.sender_id === user?.id,
-                    }))}
-                    onSelect={(text) => setAiText(text)}
-                  />
-                </div>
+                <ErrorBoundary scope="ai-smart-replies">
+                  <div className="px-3 py-1 border-t border-border/20">
+                    <AiSmartReplies
+                      targetUserId={selectedConv.otherUser.user_id}
+                      lastMessages={(messages || []).slice(-6).map(m => ({
+                        text: m.text || "",
+                        isMine: m.sender_id === user?.id,
+                      }))}
+                      onSelect={(text) => setAiText(text)}
+                    />
+                  </div>
+                </ErrorBoundary>
               )}
 
               {/* Quick actions */}
               {selectedConv && (
-                <div className="flex items-center gap-1 px-3 py-1 border-t border-border/30 bg-card/30">
-                  <AiSuggestMessageButton
-                    targetUserId={selectedConv.otherUser.user_id}
-                    lastMessages={(messages || []).slice(-6).map(m => ({
-                      text: m.text || "",
-                      isMine: m.sender_id === user?.id,
-                    }))}
-                    onSelect={(text) => setAiText(text)}
-                  />
-                  <AiTopicsCard
-                    targetUserId={selectedConv.otherUser.user_id}
-                    onSelectTopic={(q) => setAiText(q)}
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-[10.5px] gap-1 text-muted-foreground hover:text-primary h-7 px-2"
-                    onClick={() => setDatePlannerOpen(true)}
-                  >
-                    <Calendar className="h-3 w-3" />
-                    Встреча
-                  </Button>
-                </div>
+                <ErrorBoundary scope="ai-quick-actions">
+                  <div className="flex items-center gap-1 px-3 py-1 border-t border-border/30 bg-card/30">
+                    <AiSuggestMessageButton
+                      targetUserId={selectedConv.otherUser.user_id}
+                      lastMessages={(messages || []).slice(-6).map(m => ({
+                        text: m.text || "",
+                        isMine: m.sender_id === user?.id,
+                      }))}
+                      onSelect={(text) => setAiText(text)}
+                    />
+                    <AiTopicsCard
+                      targetUserId={selectedConv.otherUser.user_id}
+                      onSelectTopic={(q) => setAiText(q)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-[10.5px] gap-1 text-muted-foreground hover:text-primary h-7 px-2"
+                      onClick={() => setDatePlannerOpen(true)}
+                    >
+                      <Calendar className="h-3 w-3" />
+                      Встреча
+                    </Button>
+                  </div>
+                </ErrorBoundary>
               )}
 
               <ChatInput
