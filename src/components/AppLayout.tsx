@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import AiAssistantWidget from "@/components/ai/AiAssistantWidget";
 import { prefetchRoute } from "@/lib/route-prefetch";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const sidebarItems = [
   { title: "Главная", url: "/home", icon: Sparkles },
