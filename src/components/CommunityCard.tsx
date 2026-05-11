@@ -42,8 +42,9 @@ export default memo(function CommunityCard({ community }: Props) {
     <Link
       to={`/communities/${community.id}`}
       className="block"
-      onMouseEnter={() => import("@/lib/route-prefetch").then(m => m.prefetchRoute(`/communities/${community.id}`))}
-      onTouchStart={() => import("@/lib/route-prefetch").then(m => m.prefetchRoute(`/communities/${community.id}`))}
+      onMouseEnter={() => prefetchRoute(`/communities/${community.id}`)}
+      onFocus={() => prefetchRoute(`/communities/${community.id}`)}
+      onTouchStart={() => prefetchRoute(`/communities/${community.id}`)}
     >
       <div className="premium-card overflow-hidden">
         {/* Cover image */}
