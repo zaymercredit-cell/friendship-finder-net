@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSessionState, readSessionState, writeSessionState } from "@/lib/session-state";
 import { useParams, Link } from "react-router-dom";
 import { mockCommunities, mockPosts, mockUsers, currentUser, calculateMatchScore } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
