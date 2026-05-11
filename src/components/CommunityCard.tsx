@@ -38,7 +38,12 @@ export default memo(function CommunityCard({ community }: Props) {
   const hasUpcomingEvent = pseudoScore(community.id + "ev", 0, 10) > 4;
 
   return (
-    <Link to={`/communities/${community.id}`} className="block">
+    <Link
+      to={`/communities/${community.id}`}
+      className="block"
+      onMouseEnter={() => import("@/lib/route-prefetch").then(m => m.prefetchRoute(`/communities/${community.id}`))}
+      onTouchStart={() => import("@/lib/route-prefetch").then(m => m.prefetchRoute(`/communities/${community.id}`))}
+    >
       <div className="premium-card overflow-hidden">
         {/* Cover image */}
         <div className="relative h-40">
