@@ -4,6 +4,7 @@ import { Users, MessageCircle, ArrowRight, Share2, CalendarDays, Sparkles, Trend
 import { toast } from "sonner";
 import { memo } from "react";
 import SmartImage from "@/components/ui/smart-image";
+import { prefetchRoute } from "@/lib/route-prefetch";
 
 interface Community {
   id: string;
@@ -38,7 +39,13 @@ export default memo(function CommunityCard({ community }: Props) {
   const hasUpcomingEvent = pseudoScore(community.id + "ev", 0, 10) > 4;
 
   return (
-    <Link to={`/communities/${community.id}`} className="block">
+    <Link
+      to={`/communities/${community.id}`}
+      className="block"
+      onMouseEnter={() => prefetchRoute(`/communities/${community.id}`)}
+      onFocus={() => prefetchRoute(`/communities/${community.id}`)}
+      onTouchStart={() => prefetchRoute(`/communities/${community.id}`)}
+    >
       <div className="premium-card overflow-hidden">
         {/* Cover image */}
         <div className="relative h-40">

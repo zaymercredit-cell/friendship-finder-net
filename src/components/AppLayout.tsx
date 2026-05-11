@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import AiAssistantWidget from "@/components/ai/AiAssistantWidget";
 import { prefetchRoute } from "@/lib/route-prefetch";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const sidebarItems = [
   { title: "Главная", url: "/home", icon: Sparkles },
@@ -301,9 +302,11 @@ export default function AppLayout({ children }: { children?: React.ReactNode }) 
 
         {/* Main Content */}
         <main className="flex-1 min-w-0 px-4 py-4 pb-20 md:pb-4">
-          <Suspense fallback={<PageSkeleton />}>
-            {children ?? <Outlet />}
-          </Suspense>
+          <ErrorBoundary scope={`route:${location.pathname}`} key={location.pathname}>
+            <Suspense fallback={<PageSkeleton />}>
+              {children ?? <Outlet />}
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
 
