@@ -46,7 +46,7 @@ export default memo(function CommunityCard({ community }: Props) {
       onFocus={() => prefetchRoute(`/communities/${community.id}`)}
       onTouchStart={() => prefetchRoute(`/communities/${community.id}`)}
     >
-      <div className="premium-card overflow-hidden">
+      <div className="premium-card overflow-hidden cv-auto-tall">
         {/* Cover image */}
         <div className="relative h-40">
           <SmartImage

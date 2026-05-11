@@ -71,7 +71,7 @@ export default memo(function EventCard({ event, onToggleGoing, compact }: Props)
   }
 
   return (
-    <div className="premium-card overflow-hidden">
+    <div className="premium-card overflow-hidden cv-auto-tall">
       {/* Cover */}
       <div className="relative h-44">
         <SmartImage

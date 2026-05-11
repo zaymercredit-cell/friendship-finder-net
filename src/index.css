@@ -165,6 +165,24 @@
     box-shadow: var(--shadow-card-hover);
   }
 
+  /*
+   * content-visibility: auto skips layout/paint for off-screen items.
+   * Massive perf win on long lists; contain-intrinsic-size reserves space
+   * so scroll position and scrollbars stay accurate.
+   */
+  .cv-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 320px;
+  }
+  .cv-auto-tall {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 480px;
+  }
+  .cv-auto-row {
+    content-visibility: auto;
+    contain-intrinsic-size: 1px 88px;
+  }
+
   /* Photo overlay gradient */
   .photo-overlay {
     background: linear-gradient(180deg, transparent 0%, transparent 40%, hsl(0 0% 0% / 0.6) 100%);
