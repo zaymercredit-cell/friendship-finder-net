@@ -41,7 +41,7 @@ export default memo(function UserCard({ user, score }: {
   }, [qc, user.username]);
 
   return (
-    <div className="rounded-2xl overflow-hidden bg-card border border-border/40 card-shadow hover:card-shadow-hover transition-shadow duration-150">
+    <div className="rounded-2xl overflow-hidden bg-card border border-border/40 card-shadow hover:card-shadow-hover transition-shadow duration-150 cv-auto-tall">
       {/* Photo */}
       <Link
         to={`/profile/${user.username}`}
