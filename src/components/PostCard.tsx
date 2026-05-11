@@ -65,7 +65,7 @@ export default memo(function PostCard(props: PostCardProps) {
   })();
 
   return (
-    <article className="bg-card rounded-xl card-shadow border border-border/60 overflow-hidden">
+    <article className="bg-card rounded-xl card-shadow border border-border/60 overflow-hidden cv-auto-tall">
       {/* Header */}
       <div className="flex items-center gap-3 p-4 pb-3">
         <Link to={`/profile/${authorUsername}`} className="relative shrink-0">
