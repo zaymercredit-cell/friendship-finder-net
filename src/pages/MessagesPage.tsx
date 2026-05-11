@@ -24,6 +24,7 @@ import AiCoachMessengerPanel from "@/components/ai/AiCoachMessengerPanel";
 import ChatSafetyAlert from "@/components/trust/ChatSafetyAlert";
 import AiConversationStarters from "@/components/ai/AiConversationStarters";
 import AiSmartReplies from "@/components/ai/AiSmartReplies";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Big virtual offset → lets us prepend (older) pages to the front without
 // shifting visible items (Virtuoso anchors via firstItemIndex).
