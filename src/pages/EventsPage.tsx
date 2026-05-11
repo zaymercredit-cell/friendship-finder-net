@@ -34,8 +34,27 @@ const extendedEvents: EventCardData[] = [
 
 export default function EventsPage() {
   const [events, setEvents] = useState<EventCardData[]>(extendedEvents);
-  const [search, setSearch] = useState("");
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [search, setSearch] = useSessionState<string>("events:search", "");
+  const [activeCategory, setActiveCategory] = useSessionState<string>("events:cat", "all");
+
+  useEffect(() => {
+    const y = readSessionState<number>("events:scroll", 0);
+    if (y > 0) requestAnimationFrame(() => window.scrollTo(0, y));
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        writeSessionState("events:scroll", window.scrollY);
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      writeSessionState("events:scroll", window.scrollY);
+    };
+  }, []);
 
   const toggleGoing = (id: string) => {
     setEvents(events.map(e =>
