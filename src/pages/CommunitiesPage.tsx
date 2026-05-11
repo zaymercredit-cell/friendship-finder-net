@@ -23,8 +23,27 @@ function pseudoScore(id: string, base: number, range: number): number {
 }
 
 function CommunityListView() {
-  const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState("all");
+  const [search, setSearch] = useSessionState<string>("communities:search", "");
+  const [activeTab, setActiveTab] = useSessionState<string>("communities:tab", "all");
+
+  useEffect(() => {
+    const y = readSessionState<number>("communities:scroll", 0);
+    if (y > 0) requestAnimationFrame(() => window.scrollTo(0, y));
+    let ticking = false;
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        writeSessionState("communities:scroll", window.scrollY);
+        ticking = false;
+      });
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      writeSessionState("communities:scroll", window.scrollY);
+    };
+  }, []);
 
   const filteredCommunities = mockCommunities.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
