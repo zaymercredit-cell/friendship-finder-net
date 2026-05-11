@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Users, MessageCircle, ArrowRight, Share2, CalendarDays, Sparkles, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
-import { memo, useCallback } from "react";
+import { memo } from "react";
 import SmartImage from "@/components/ui/smart-image";
 import { prefetchRoute } from "@/lib/route-prefetch";
 
