@@ -251,7 +251,7 @@ function CommunityDetailView({ communityId }: { communityId: string }) {
       </div>
 
       <Tabs defaultValue="posts" className="w-full">
-        <TabsList className="w-full bg-card border border-border/60 card-shadow rounded-xl h-11 p-1">
+        <TabsList className="w-full premium-card rounded-xl h-11 p-1">
           <TabsTrigger value="posts" className="flex-1 gap-1.5 text-[13px] rounded-lg"><FileText className="h-4 w-4" />Посты</TabsTrigger>
           <TabsTrigger value="members" className="flex-1 gap-1.5 text-[13px] rounded-lg"><Users className="h-4 w-4" />Участники</TabsTrigger>
           <TabsTrigger value="events" className="flex-1 gap-1.5 text-[13px] rounded-lg"><Calendar className="h-4 w-4" />События</TabsTrigger>

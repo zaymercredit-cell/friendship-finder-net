@@ -15,7 +15,7 @@ export default function FriendsPage() {
       </div>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="w-full bg-card border border-border/60 card-shadow rounded-xl h-10 p-1">
+        <TabsList className="w-full premium-card rounded-xl h-10 p-1">
           <TabsTrigger value="all" className="flex-1 text-[12px] gap-1.5 rounded-lg">
             <UserCheck className="h-3.5 w-3.5" />Мои друзья
           </TabsTrigger>
