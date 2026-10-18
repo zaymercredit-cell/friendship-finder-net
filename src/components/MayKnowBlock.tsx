@@ -24,7 +24,7 @@ export default function MayKnowBlock() {
   if (mayKnow.length === 0) return null;
 
   return (
-    <div className="bg-card rounded-xl border border-border/60 card-shadow p-4">
+    <div className="premium-card p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <Users className="h-4 w-4 text-primary" />

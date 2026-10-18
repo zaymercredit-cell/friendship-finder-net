@@ -17,7 +17,7 @@ export default function DailyActivitySummary() {
   ].filter(i => i.value > 0);
 
   return (
-    <div className="bg-card rounded-xl border border-border/60 card-shadow p-4">
+    <div className="premium-card p-4">
       <p className="text-[14px] font-semibold text-foreground mb-3">Сегодня</p>
       <div className="grid grid-cols-2 gap-2">
         {items.map((item) => (

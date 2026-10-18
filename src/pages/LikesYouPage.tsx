@@ -90,7 +90,7 @@ export default function LikesYouPage() {
       )}
 
       {likes.length === 0 ? (
-        <div className="bg-card rounded-xl border border-border/60 card-shadow p-8 text-center">
+        <div className="premium-card p-8 text-center">
           <Heart className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-muted-foreground text-[14px]">Пока нет симпатий</p>
           <p className="text-muted-foreground/60 text-[13px] mt-1">Будьте активны и заполните профиль!</p>
@@ -104,7 +104,7 @@ export default function LikesYouPage() {
             const isBlurred = !isVip && i >= 1;
 
             return (
-              <div key={like.id} className="bg-card rounded-xl border border-border/60 card-shadow p-4 flex items-center gap-4 hover:border-primary/20 transition-colors">
+              <div key={like.id} className="premium-card p-4 flex items-center gap-4 hover:border-primary/20 transition-colors">
                 <div className="relative">
                   <Avatar className={`h-14 w-14 ${isBlurred ? "blur-md" : ""}`}>
                     <AvatarImage src={p.avatar_url || ""} alt={p.first_name} />
