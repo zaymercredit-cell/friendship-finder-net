@@ -7,7 +7,7 @@ export default function PlatformStatsBlock() {
   if (!stats || (stats.totalUsers === 0 && stats.todayLikes === 0)) return null;
 
   return (
-    <div className="bg-card rounded-xl border border-border/60 card-shadow p-4">
+    <div className="premium-card p-4">
       <p className="text-[14px] font-semibold text-foreground mb-3">Сегодня на платформе</p>
       <div className="grid grid-cols-3 gap-3">
         <div className="text-center p-2 rounded-lg bg-secondary/40">

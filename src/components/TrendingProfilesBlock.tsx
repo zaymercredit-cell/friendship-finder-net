@@ -18,7 +18,7 @@ export default function TrendingProfilesBlock() {
   if (trending.length === 0) return null;
 
   return (
-    <div className="bg-card rounded-xl border border-border/60 card-shadow p-4">
+    <div className="premium-card p-4">
       <div className="flex items-center gap-2 mb-3">
         <TrendingUp className="h-4 w-4 text-primary" />
         <span className="text-[14px] font-semibold text-foreground">Популярные профили</span>

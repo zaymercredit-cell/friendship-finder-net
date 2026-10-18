@@ -38,7 +38,7 @@ export default function ActivityPage() {
 
       {/* Today's Stats */}
       {dailyStats && (dailyStats.profileViews + dailyStats.likesReceived + dailyStats.messagesReceived + dailyStats.newMatches > 0) && (
-        <div className="bg-card rounded-xl border border-border/60 card-shadow p-5">
+        <div className="premium-card p-5">
           <p className="text-[14px] font-semibold text-foreground mb-3">Ваш день</p>
           <div className="grid grid-cols-2 gap-3">
             <Link to="/profile-views" className="flex items-center gap-3 p-3 rounded-lg bg-secondary/40 hover:bg-secondary/70 transition-colors">
@@ -74,7 +74,7 @@ export default function ActivityPage() {
       )}
 
       {/* Streak */}
-      <div className="bg-card rounded-xl border border-border/60 card-shadow p-5">
+      <div className="premium-card p-5">
         <div className="flex items-center gap-3">
           <div className="h-12 w-12 rounded-xl bg-orange-500/10 flex items-center justify-center">
             <Flame className="h-6 w-6 text-orange-500" />
@@ -92,7 +92,7 @@ export default function ActivityPage() {
       </div>
 
       {/* Daily likes */}
-      <div className="bg-card rounded-xl border border-border/60 card-shadow p-5 space-y-3">
+      <div className="premium-card p-5 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Heart className="h-4 w-4 text-primary" />
@@ -124,7 +124,7 @@ export default function ActivityPage() {
       </div>
 
       {/* Profile Boost */}
-      <div className="bg-card rounded-xl border border-border/60 card-shadow p-5 space-y-3">
+      <div className="premium-card p-5 space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-warning" />
@@ -155,19 +155,19 @@ export default function ActivityPage() {
 
       {/* Quick links */}
       <div className="grid grid-cols-2 gap-3">
-        <Link to="/achievements" className="bg-card rounded-xl border border-border/60 card-shadow p-4 text-center hover:border-primary/30 transition-colors">
+        <Link to="/achievements" className="premium-card p-4 text-center hover:border-primary/30 transition-colors">
           <Trophy className="h-5 w-5 text-primary mx-auto mb-1" />
           <p className="text-xs font-semibold text-foreground">Достижения</p>
         </Link>
-        <Link to="/invite" className="bg-card rounded-xl border border-border/60 card-shadow p-4 text-center hover:border-primary/30 transition-colors">
+        <Link to="/invite" className="premium-card p-4 text-center hover:border-primary/30 transition-colors">
           <Gift className="h-5 w-5 text-primary mx-auto mb-1" />
           <p className="text-xs font-semibold text-foreground">Пригласить друзей</p>
         </Link>
-        <Link to="/profile-views" className="bg-card rounded-xl border border-border/60 card-shadow p-4 text-center hover:border-primary/30 transition-colors">
+        <Link to="/profile-views" className="premium-card p-4 text-center hover:border-primary/30 transition-colors">
           <Eye className="h-5 w-5 text-primary mx-auto mb-1" />
           <p className="text-xs font-semibold text-foreground">Просмотры профиля</p>
         </Link>
-        <Link to="/discover" className="bg-card rounded-xl border border-border/60 card-shadow p-4 text-center hover:border-primary/30 transition-colors">
+        <Link to="/discover" className="premium-card p-4 text-center hover:border-primary/30 transition-colors">
           <Sparkles className="h-5 w-5 text-primary mx-auto mb-1" />
           <p className="text-xs font-semibold text-foreground">Знакомства</p>
         </Link>

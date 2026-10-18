@@ -179,7 +179,7 @@ function CommunityDetailView({ communityId }: { communityId: string }) {
         <ArrowLeft className="h-4 w-4" />Все сообщества
       </Link>
 
-      <div className="bg-card rounded-xl card-shadow border border-border/60 overflow-hidden">
+      <div className="premium-card overflow-hidden">
         <div className="h-48 bg-cover bg-center" style={{ backgroundImage: `url(${community.cover})` }} />
         <div className="p-5">
           <div className="flex items-start justify-between gap-4">
@@ -251,7 +251,7 @@ function CommunityDetailView({ communityId }: { communityId: string }) {
       </div>
 
       <Tabs defaultValue="posts" className="w-full">
-        <TabsList className="w-full bg-card border border-border/60 card-shadow rounded-xl h-11 p-1">
+        <TabsList className="w-full premium-card rounded-xl h-11 p-1">
           <TabsTrigger value="posts" className="flex-1 gap-1.5 text-[13px] rounded-lg"><FileText className="h-4 w-4" />Посты</TabsTrigger>
           <TabsTrigger value="members" className="flex-1 gap-1.5 text-[13px] rounded-lg"><Users className="h-4 w-4" />Участники</TabsTrigger>
           <TabsTrigger value="events" className="flex-1 gap-1.5 text-[13px] rounded-lg"><Calendar className="h-4 w-4" />События</TabsTrigger>
@@ -263,7 +263,7 @@ function CommunityDetailView({ communityId }: { communityId: string }) {
         </TabsContent>
 
         <TabsContent value="members" className="mt-4">
-          <div className="bg-card rounded-xl border border-border/60 card-shadow p-4">
+          <div className="premium-card p-4">
             {onlineMembers.length > 0 && (
               <div className="mb-3">
                 <p className="text-[12px] font-semibold text-foreground flex items-center gap-1.5 mb-2">
@@ -307,7 +307,7 @@ function CommunityDetailView({ communityId }: { communityId: string }) {
         </TabsContent>
 
         <TabsContent value="events" className="mt-4">
-          <div className="bg-card rounded-xl border border-border/60 card-shadow p-8 text-center">
+          <div className="premium-card p-8 text-center">
             <Calendar className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
             <p className="text-[14px] text-muted-foreground">Событий пока нет</p>
             <Button variant="outline" size="sm" className="mt-4 gap-1.5 text-[13px] rounded-xl"><Plus className="h-4 w-4" />Создать событие</Button>
@@ -315,7 +315,7 @@ function CommunityDetailView({ communityId }: { communityId: string }) {
         </TabsContent>
 
         <TabsContent value="about" className="mt-4">
-          <div className="bg-card rounded-xl border border-border/60 card-shadow p-5 space-y-4">
+          <div className="premium-card p-5 space-y-4">
             <div>
               <h3 className="text-[14px] font-semibold text-foreground mb-1.5">Описание</h3>
               <p className="text-[14px] text-muted-foreground leading-relaxed">{community.description}</p>

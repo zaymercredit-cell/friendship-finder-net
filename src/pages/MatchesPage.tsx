@@ -45,7 +45,7 @@ export default function MatchesPage() {
           { icon: Sparkles, label: "Новые", value: newMatches.filter(m => m.matchedAt === "Сегодня").length, color: "text-warning" },
           { icon: MessageCircle, label: "Общение", value: mockMatches.filter(m => m.hasNewMessage).length, color: "text-success" },
         ].map(stat => (
-          <div key={stat.label} className="bg-card rounded-xl border border-border/60 card-shadow p-3.5 text-center">
+          <div key={stat.label} className="premium-card p-3.5 text-center">
             <stat.icon className={`h-5 w-5 mx-auto mb-1.5 ${stat.color}`} />
             <p className="text-[20px] font-bold text-foreground">{stat.value}</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">{stat.label}</p>
@@ -54,7 +54,7 @@ export default function MatchesPage() {
       </div>
 
       {mockMatches.length === 0 ? (
-        <div className="text-center py-16 bg-card rounded-xl border border-border/60 card-shadow">
+        <div className="text-center py-16 premium-card">
           <Heart className="h-14 w-14 text-muted-foreground/15 mx-auto mb-4" />
           <h3 className="text-[17px] font-semibold text-foreground mb-1">Совпадений пока нет</h3>
           <p className="text-[14px] text-muted-foreground mb-1">Начните знакомиться — поставьте симпатии людям</p>
@@ -97,7 +97,7 @@ export default function MatchesPage() {
 
 function MatchCard({ match, onMessage }: { match: typeof mockMatches[0]; onMessage: () => void }) {
   return (
-    <div className="bg-card rounded-xl border border-border/60 card-shadow p-4 flex items-center gap-4 hover:shadow-card-hover transition-shadow duration-200">
+    <div className="premium-card p-4 flex items-center gap-4 hover:shadow-card-hover transition-shadow duration-200">
       <div className="relative shrink-0">
         <Avatar className="h-16 w-16 ring-1 ring-border/30">
           <AvatarImage src={match.user.avatar} alt={match.user.name} className="object-cover" />
