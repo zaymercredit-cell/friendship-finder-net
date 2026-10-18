@@ -82,12 +82,12 @@ export default function EventsPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-bold text-foreground tracking-tight">События</h1>
           <p className="text-[13px] text-muted-foreground mt-0.5">Встречайтесь и знакомьтесь вживую</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <Link to="/meetups">
             <Button variant="outline" size="sm" className="gap-1.5 text-[12px]">
               <CalendarDays className="h-4 w-4" />Встречи
