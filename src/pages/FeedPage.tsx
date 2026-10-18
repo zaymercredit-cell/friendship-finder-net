@@ -144,7 +144,7 @@ export default function FeedPage() {
       <NewTodayBlock />
 
       {/* People you might like */}
-      <div className="bg-card rounded-xl border border-border/60 card-shadow p-4">
+      <div className="premium-card p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Heart className="h-4 w-4 text-primary" />
@@ -206,7 +206,7 @@ export default function FeedPage() {
       </Link>
 
       {/* Create Post */}
-      <div className="bg-card rounded-xl card-shadow border border-border/60 p-4">
+      <div className="premium-card p-4">
         <div className="flex items-start gap-3">
           <div className="relative">
             <Avatar className="h-10 w-10 ring-1 ring-border/30">
@@ -235,7 +235,7 @@ export default function FeedPage() {
       </div>
 
       {/* Online now */}
-      <div className="bg-card rounded-xl border border-border/60 card-shadow p-4">
+      <div className="premium-card p-4">
         <div className="flex items-center gap-2 mb-3">
           <Circle className="h-2.5 w-2.5 fill-success text-success" />
           <span className="text-[14px] font-semibold text-foreground">Сейчас онлайн</span>
@@ -254,7 +254,7 @@ export default function FeedPage() {
       </div>
 
       {/* Feed tabs */}
-      <div className="flex items-center gap-1 bg-card rounded-xl border border-border/60 p-1">
+      <div className="flex items-center gap-1 premium-card rounded-xl p-1">
         {[
           { key: "all" as const, label: "Все", icon: Sparkles },
           { key: "popular" as const, label: "Популярное", icon: Flame },
@@ -281,14 +281,14 @@ export default function FeedPage() {
       {/* Posts */}
       {hasRealPosts ? (
         realPosts.map((post, idx) => (
-          <div key={post.id}>
+          <div key={post.id} className="animate-fade-in">
             <PostCard realPost={post} />
             {idx === 2 && <AdPlaceholder className="my-4" />}
           </div>
         ))
       ) : (
         sortedMockPosts.map((post, idx) => (
-          <div key={post.id}>
+          <div key={post.id} className="animate-fade-in">
             <PostCard post={post} />
             {idx === 2 && <AdPlaceholder className="my-4" />}
           </div>
