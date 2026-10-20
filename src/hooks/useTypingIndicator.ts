@@ -21,6 +21,8 @@ export function useTypingIndicator(conversationId: string | null) {
   // Subscribe to channel
   useEffect(() => {
     if (!conversationId || !user) return;
+    setRemoteTyping({});
+    lastSentRef.current = 0;
     const ch = supabase.channel(`typing:${conversationId}`, {
       config: { broadcast: { self: false } },
     });
@@ -53,6 +55,8 @@ export function useTypingIndicator(conversationId: string | null) {
     }, 1000);
 
     return () => {
+      ch.send({ type: "broadcast", event: "typing", payload: { userId: user.id, action: "stop" } });
+      lastSentRef.current = 0;
       if (sweepTimerRef.current) clearInterval(sweepTimerRef.current);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
       supabase.removeChannel(ch);
@@ -94,5 +98,5 @@ export function useTypingIndicator(conversationId: string | null) {
   }, [send]);
 
   const isAnyoneTyping = Object.keys(remoteTyping).length > 0;
-  return { isAnyoneTyping, notifyTyping, stopTyping };
+  return { isAnyoneTyping: !!conversationId && isAnyoneTyping, notifyTyping, stopTyping };
 }

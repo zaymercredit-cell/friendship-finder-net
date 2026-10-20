@@ -36,7 +36,7 @@ export function prefetchProfile(qc: QueryClient, username: string) {
       await qc.prefetchQuery({
         queryKey: ["profile", username],
         queryFn: async () => {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from("profiles")
             .select("*")
             .eq("username", username)
@@ -71,10 +71,11 @@ export function prefetchConversation(qc: QueryClient, conversationId: string) {
             .eq("conversation_id", conversationId)
             .order("created_at", { ascending: false })
             .range(0, 29);
+          if (error) throw error;
           return ((data || []) as any[]).reverse();
         },
         initialPageParam: 0,
-        getNextPageParam: () => undefined,
+        getNextPageParam: (lastPage, allPages) => lastPage.length === 30 ? allPages.length : undefined,
         staleTime: 30_000,
       });
     } catch {
