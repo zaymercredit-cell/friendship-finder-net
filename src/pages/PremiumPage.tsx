@@ -1,11 +1,8 @@
 import { Crown, Heart, Eye, Zap, Star, Shield, SlidersHorizontal, MessageCircle, Gift, Sparkles, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/contexts/AuthContext";
 import { useVipStatus } from "@/hooks/useVipStatus";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 
 const features = [
@@ -46,20 +43,9 @@ const testimonials = [
 ];
 
 export default function PremiumPage() {
-  const { user } = useAuth();
   const { data: isVip } = useVipStatus();
-  const queryClient = useQueryClient();
 
-  const handleActivate = async (months: number) => {
-    if (!user) return;
-    const expiresAt = new Date(Date.now() + months * 30 * 24 * 60 * 60 * 1000).toISOString();
-    await supabase.from("subscriptions").insert({
-      user_id: user.id, type: "vip", status: "active", expires_at: expiresAt,
-    });
-    await supabase.from("profiles").update({ is_vip: true }).eq("user_id", user.id);
-    queryClient.invalidateQueries({ queryKey: ["vip-status"] });
-    toast.success("🎉 VIP активирован!");
-  };
+  const handleActivate = (_months: number) => toast.info("Оплата Premium пока недоступна. Подписка не активирована.");
 
   if (isVip) {
     return (
@@ -206,7 +192,7 @@ export default function PremiumPage() {
           <Crown className="h-5 w-5" />
           Попробовать Premium
         </Button>
-        <p className="text-[11px] text-muted-foreground">Отмена в любой момент • Безопасная оплата</p>
+        <p className="text-[11px] text-muted-foreground">Оплата пока не подключена</p>
       </div>
     </div>
   );
