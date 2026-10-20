@@ -1,4 +1,6 @@
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useMemo, useCallback } from "react";
+import { prependedCount } from "@/lib/message-history";
+import { RowSkeleton } from "@/components/ui/content-skeleton";
 import { useParams, useNavigate } from "react-router-dom";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,14 +45,14 @@ export default function MessagesPage() {
   const { data: conversations, isLoading } = useConversationList();
   const [selectedId, setSelectedId] = useState<string | null>(routeId || null);
   const selectedConv = conversations?.find(c => c.id === selectedId);
-  const { data: messages, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(selectedId);
+  const { data: messages, isLoading: messagesLoading, isError: messagesError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(selectedId);
   const [search, setSearch] = useState("");
   const [aiText, setAiText] = useState("");
   const [datePlannerOpen, setDatePlannerOpen] = useState(false);
 
   const virtuosoRef = useRef<VirtuosoHandle>(null);
-  const firstItemIndexRef = useRef(START_INDEX);
-  const prevLengthRef = useRef(0);
+  const [firstItemIndex, setFirstItemIndex] = useState(START_INDEX);
+  const previousFirstRef = useRef<string>();
   const prevConvRef = useRef<string | null>(null);
   const atBottomRef = useRef(true);
 
@@ -63,38 +65,20 @@ export default function MessagesPage() {
   }, [routeId]);
 
   // Reset virtual indices when switching conversations.
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (selectedId !== prevConvRef.current) {
-      firstItemIndexRef.current = START_INDEX;
-      prevLengthRef.current = 0;
+      setFirstItemIndex(START_INDEX);
+      previousFirstRef.current = undefined;
       atBottomRef.current = true;
       prevConvRef.current = selectedId;
     }
   }, [selectedId]);
 
   // Maintain firstItemIndex when older messages are prepended.
-  useEffect(() => {
-    const len = messages?.length || 0;
-    const prev = prevLengthRef.current;
-    if (len > prev && prev > 0) {
-      // Detect prepend: if the first id changed and last id stayed, items were added at the front.
-      // Heuristic: when length grows without bottom growth, treat the diff as a prepend.
-      // We check by comparing the position of the previous tail.
-      const added = len - prev;
-      // If the new last message id is the same as the previous last id → all added at front.
-      // (Safe to compute from current messages.)
-      const currLastId = messages![len - 1].id;
-      // Without storing tail explicitly, infer prepend when not at bottom & fetching previous.
-      // Simpler: if user is not at bottom, treat growth as prepend.
-      if (!atBottomRef.current) {
-        firstItemIndexRef.current = Math.max(0, firstItemIndexRef.current - added);
-      } else {
-        // Growth at the bottom (incoming/sent message) → keep firstItemIndex,
-        // Virtuoso will autoscroll via followOutput.
-        void currLastId;
-      }
-    }
-    prevLengthRef.current = len;
+  useLayoutEffect(() => {
+    const added = prependedCount(previousFirstRef.current, messages);
+    if (added) setFirstItemIndex(index => Math.max(0, index - added));
+    previousFirstRef.current = messages[0]?.id;
   }, [messages]);
 
   const prepared: PreparedMessage[] = useMemo(() => {
@@ -213,19 +197,23 @@ export default function MessagesPage() {
               {/* Virtualized messages */}
               <div className="flex-1 min-h-0 relative">
                 {isFetchingNextPage && (
-                  <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 bg-card/90 backdrop-blur-sm rounded-full px-3 py-1 border border-border/50 shadow-sm">
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 z-10 bg-card rounded-full px-3 py-1 border border-border/50">
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   </div>
                 )}
                 <ErrorBoundary scope="chat-messages">
-                  {prepared.length > 0 ? (
+                  {messagesError ? (
+                    <div className="p-4 text-center"><p className="text-muted-foreground">Не удалось загрузить сообщения</p><Button variant="outline" onClick={() => refetch()}>Повторить</Button></div>
+                  ) : messagesLoading ? <div className="p-4"><RowSkeleton count={3} /></div> : prepared.length > 0 ? (
                     <Virtuoso
+                      key={selectedId}
                       ref={virtuosoRef}
                       data={prepared}
-                      firstItemIndex={firstItemIndexRef.current}
+                      firstItemIndex={firstItemIndex}
+                      computeItemKey={(_, item) => item.msg.id}
                       initialTopMostItemIndex={prepared.length - 1}
                       startReached={handleStartReached}
-                      followOutput={(isAtBottom) => (isAtBottom ? "smooth" : false)}
+                      followOutput={(isAtBottom) => (isAtBottom ? "auto" : false)}
                       atBottomStateChange={(at) => { atBottomRef.current = at; }}
                       increaseViewportBy={{ top: 600, bottom: 600 }}
                       className="px-4 md:px-6 py-3"
@@ -318,6 +306,7 @@ export default function MessagesPage() {
               )}
 
               <ChatInput
+                key={selectedConv.id}
                 conversationId={selectedConv.id}
                 prefillText={aiText}
                 onPrefillUsed={() => setAiText("")}

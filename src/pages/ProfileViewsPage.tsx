@@ -11,7 +11,6 @@ import {
   Eye, Crown, Lock, MessageCircle, ExternalLink, Circle, Loader2, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -42,18 +41,7 @@ export default function ProfileViewsPage() {
   const viewers = data?.viewers || [];
 
   const handleActivateVip = async () => {
-    if (!user) return;
-    // Demo: activate VIP for 30 days
-    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    await supabase.from("subscriptions" as any).insert({
-      user_id: user.id,
-      type: "vip",
-      status: "active",
-      expires_at: expiresAt,
-    });
-    await supabase.from("profiles").update({ is_vip: true } as any).eq("user_id", user.id);
-    toast.success("🎉 VIP активирован на 30 дней!");
-    window.location.reload();
+    navigate("/premium");
   };
 
   return (

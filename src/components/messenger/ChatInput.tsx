@@ -34,6 +34,7 @@ export default function ChatInput({ conversationId, prefillText, onPrefillUsed, 
 
   const handleSend = useCallback(async () => {
     const trimmed = text.trim();
+    if (uploading || sendMessage.isPending) return;
     if (!trimmed && !imagePreview) return;
 
     let mediaUrl: string | undefined;
@@ -43,16 +44,27 @@ export default function ChatInput({ conversationId, prefillText, onPrefillUsed, 
         const res = await fetch(imagePreview);
         const blob = await res.blob();
         const filename = `msg-${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-        const { data } = await supabase.storage.from("post-images").upload(filename, blob, { contentType: blob.type });
+        const { data, error } = await supabase.storage.from("post-images").upload(filename, blob, { contentType: blob.type });
+        if (error || !data) throw error || new Error("Upload failed");
         if (data) {
           const { data: urlData } = supabase.storage.from("post-images").getPublicUrl(data.path);
           mediaUrl = urlData.publicUrl;
         }
-      } catch { /* ignore */ }
+      } catch {
+        toast.error("Не удалось загрузить фото. Попробуйте ещё раз.");
+        setUploading(false);
+        return;
+      }
       setUploading(false);
     }
 
-    sendMessage.mutate({ conversationId, text: trimmed || undefined, mediaUrl });
+    sendMessage.mutate({ conversationId, text: trimmed || undefined, mediaUrl }, {
+      onError: () => {
+        setText(current => current || trimmed);
+        setImagePreview(current => current || imagePreview);
+        toast.error("Сообщение не отправлено. Попробуйте ещё раз.");
+      },
+    });
     onStopTyping?.();
     setText("");
     setImagePreview(null);
@@ -140,6 +152,7 @@ export default function ChatInput({ conversationId, prefillText, onPrefillUsed, 
         />
 
         <Button
+          aria-label="Отправить сообщение"
           size="icon"
           className="h-9 w-9 shrink-0 mb-0.5 rounded-[10px] transition-all"
           disabled={!canSend}

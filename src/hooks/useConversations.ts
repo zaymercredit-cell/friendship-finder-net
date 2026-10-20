@@ -2,6 +2,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useCallback } from "react";
+import { chronological, reconcileMessage, type MessagePages } from "@/lib/message-history";
 
 export interface ConversationListItem {
   id: string;
@@ -81,21 +82,16 @@ export function useConversationList() {
       const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
 
       // BATCHED unread counts — one query for all conversations.
-      const { data: recentMsgs } = await supabase
-        .from("messages")
-        .select("conversation_id, sender_id, created_at")
-        .in("conversation_id", convIds)
-        .neq("sender_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(500);
-
       const unreadMap = new Map<string, number>();
-      for (const m of recentMsgs || []) {
-        const lr = lastReadMap.get(m.conversation_id) || "1970-01-01";
-        if (m.created_at > lr) {
-          unreadMap.set(m.conversation_id, (unreadMap.get(m.conversation_id) || 0) + 1);
-        }
-      }
+      await Promise.all(participants.map(async participant => {
+        const { count, error } = await supabase.from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("conversation_id", participant.conversation_id)
+          .neq("sender_id", user.id)
+          .gt("created_at", participant.last_read_at || "1970-01-01T00:00:00Z");
+        if (error) throw error;
+        unreadMap.set(participant.conversation_id, count || 0);
+      }));
 
       const results: ConversationListItem[] = [];
       for (const conv of convos) {
@@ -163,12 +159,13 @@ export function useMessages(conversationId: string | null) {
       const to = from + MESSAGES_PAGE_SIZE - 1;
       
       // We fetch in descending order then reverse for display
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("messages")
         .select("*")
         .eq("conversation_id", conversationId)
         .order("created_at", { ascending: false })
         .range(from, to);
+      if (error) throw error;
       
       return ((data || []) as MessageItem[]).reverse();
     },
@@ -184,23 +181,25 @@ export function useMessages(conversationId: string | null) {
       const allPages = [...data.pages].reverse();
       return {
         ...data,
-        flat: allPages.flat(),
+        flat: chronological(allPages.flat()),
       };
     },
   });
 
   // Mark messages as read
   useEffect(() => {
-    if (!conversationId || !user) return;
+    if (!conversationId || !user || !query.isSuccess || query.isFetching || document.visibilityState !== "visible") return;
+    const latestReceived = query.data?.flat.filter(m => m.sender_id !== user.id && !m.id.startsWith("optimistic-")).at(-1);
+    if (!latestReceived) return;
     supabase
       .from("conversation_participants")
-      .update({ last_read_at: new Date().toISOString() })
+      .update({ last_read_at: latestReceived.created_at })
       .eq("conversation_id", conversationId)
       .eq("user_id", user.id)
-      .then(() => {
-        queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
+      .then(({ error }) => {
+        if (!error) queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
       });
-  }, [conversationId, user, query.data?.flat?.length, queryClient]);
+  }, [conversationId, user, query.isSuccess, query.isFetching, query.data, queryClient]);
 
   // Realtime for this conversation
   useEffect(() => {
@@ -217,37 +216,23 @@ export function useMessages(conversationId: string | null) {
         queryClient.setQueryData(["messages", conversationId], (old: any) => {
           if (!old) return old;
           const newMsg = payload.new as MessageItem;
-          const pages = [...old.pages];
-          const lastIdx = pages.length - 1;
-          const lastPage = [...(pages[lastIdx] || [])];
-          // Skip if real id already present.
-          if (lastPage.some((m: MessageItem) => m.id === newMsg.id)) {
-            return old;
-          }
-          // Replace matching optimistic message (same sender+text within 30s window).
-          const optIdx = lastPage.findIndex((m: MessageItem) =>
-            m.id.startsWith("optimistic-") &&
-            m.sender_id === newMsg.sender_id &&
-            (m.text || "") === (newMsg.text || "") &&
-            Math.abs(new Date(m.created_at).getTime() - new Date(newMsg.created_at).getTime()) < 30_000
-          );
-          if (optIdx !== -1) {
-            lastPage[optIdx] = newMsg;
-          } else {
-            lastPage.push(newMsg);
-          }
-          pages[lastIdx] = lastPage;
-          return { ...old, pages };
+          // Only the mutation response owns optimistic reconciliation; matching by
+          // text could consume a different, concurrent identical send.
+          return reconcileMessage(old, newMsg);
         });
         queryClient.invalidateQueries({ queryKey: ["conversations"] });
       })
-      .subscribe();
+      .subscribe(status => {
+        if (status === "SUBSCRIBED") queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+      });
     return () => { supabase.removeChannel(channel); };
   }, [conversationId, queryClient]);
 
   return {
     data: query.data?.flat || [],
     isLoading: query.isLoading,
+    isError: query.isError,
+    refetch: query.refetch,
     fetchNextPage: query.fetchNextPage,
     hasNextPage: query.hasNextPage,
     isFetchingNextPage: query.isFetchingNextPage,
@@ -279,7 +264,6 @@ export function useSendMessage() {
     onMutate: async ({ conversationId, text, mediaUrl }) => {
       if (!user) return;
       await queryClient.cancelQueries({ queryKey: ["messages", conversationId] });
-      const previous = queryClient.getQueryData(["messages", conversationId]);
       const tempId = `optimistic-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const optimisticMsg: MessageItem = {
         id: tempId,
@@ -293,27 +277,19 @@ export function useSendMessage() {
         read_at: null,
       };
       queryClient.setQueryData(["messages", conversationId], (old: any) => {
-        if (!old) return old;
-        const pages = [...old.pages];
-        const lastIdx = pages.length - 1;
-        pages[lastIdx] = [...(pages[lastIdx] || []), optimisticMsg];
-        return { ...old, pages };
+        return reconcileMessage(old, optimisticMsg);
       });
-      return { previous, tempId };
+      return { tempId };
     },
     onError: (_err, vars, ctx) => {
-      if (ctx?.previous) {
-        queryClient.setQueryData(["messages", vars.conversationId], ctx.previous);
-      }
+      queryClient.setQueryData<MessagePages<MessageItem>>(["messages", vars.conversationId], old => old && ({
+        ...old, pages: old.pages.map(page => page.filter(m => m.id !== ctx?.tempId)),
+      }));
     },
     onSuccess: (data, vars, ctx) => {
       // Replace optimistic msg with the real one (same id from realtime might also arrive).
       queryClient.setQueryData(["messages", vars.conversationId], (old: any) => {
-        if (!old) return old;
-        const pages = old.pages.map((page: MessageItem[]) =>
-          page.map((m) => (m.id === ctx?.tempId ? (data as MessageItem) : m))
-        );
-        return { ...old, pages };
+        return reconcileMessage(old, data as MessageItem, ctx?.tempId);
       });
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
