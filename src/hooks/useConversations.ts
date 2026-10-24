@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useCallback } from "react";
 import { chronological, reconcileMessage, type MessagePages } from "@/lib/message-history";
+import { fetchMessagePage, nextMessageCursor, type MessageCursor } from "@/lib/message-query";
 
 export interface ConversationListItem {
   id: string;
@@ -33,8 +34,6 @@ export interface MessageItem {
   created_at: string;
   read_at: string | null;
 }
-
-const MESSAGES_PAGE_SIZE = 30;
 
 export function useConversationList() {
   const { user } = useAuth();
@@ -157,27 +156,12 @@ export function useMessages(conversationId: string | null) {
 
   const query = useInfiniteQuery({
     queryKey: ["messages", conversationId],
-    queryFn: async ({ pageParam }: { pageParam: number }) => {
+    queryFn: async ({ pageParam, signal }) => {
       if (!conversationId) return [];
-      const from = pageParam * MESSAGES_PAGE_SIZE;
-      const to = from + MESSAGES_PAGE_SIZE - 1;
-      
-      // We fetch in descending order then reverse for display
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: false })
-        .range(from, to);
-      if (error) throw error;
-      
-      return ((data || []) as MessageItem[]).reverse();
+      return fetchMessagePage(conversationId, pageParam, signal);
     },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < MESSAGES_PAGE_SIZE) return undefined;
-      return allPages.length;
-    },
+    initialPageParam: null as MessageCursor | null,
+    getNextPageParam: nextMessageCursor,
     enabled: !!conversationId,
     staleTime: 60_000,
     select: (data) => {
@@ -236,7 +220,28 @@ export function useMessages(conversationId: string | null) {
       .subscribe(status => {
         if (status === "SUBSCRIBED") queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
       });
-    return () => { supabase.removeChannel(channel); };
+    // Reconcile the newest page even if realtime is disconnected. Older pages
+    // keep their stable cursors; do not refetch the entire loaded history.
+    let disposed = false;
+    const recover = async () => {
+      if (document.visibilityState !== "visible" || queryClient.isMutating()) return;
+      try {
+        const newest = await fetchMessagePage(conversationId, null);
+        if (disposed || queryClient.isMutating()) return;
+        queryClient.setQueryData<MessagePages<MessageItem>>(["messages", conversationId], old => {
+          if (!old) return old;
+          return newest.reduce((history, message) => reconcileMessage(history, message), old);
+        });
+      } catch { /* Existing history stays readable; next interval retries. */ }
+    };
+    const timer = window.setInterval(recover, 30_000);
+    window.addEventListener("online", recover);
+    return () => {
+      disposed = true;
+      clearInterval(timer);
+      window.removeEventListener("online", recover);
+      supabase.removeChannel(channel);
+    };
   }, [conversationId, queryClient]);
 
   return {

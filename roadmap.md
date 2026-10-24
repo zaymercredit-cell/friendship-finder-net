@@ -10,6 +10,7 @@
 - [ ] Desktop/mobile regression checks and factual final report.
 
 ## Current verification
+- Continue approved phases: stabilize history pagination and disconnected-message recovery, then validate persistent community/event actions.
 - Uploaded brief rechecked on 2026-10-24; critical stability remains the active stage.
 - Message reconciliation tests pass (4); compilation errors in prefetch and chat skeleton usage corrected.
 - Admin bootstrap retired and deployed; payment subscription writes revoked for browser roles and profile VIP protected by a trigger. Runtime security checks pending.
