@@ -9,4 +9,10 @@
 - [ ] Review profile editing, recovery states, AI limits/privacy and monetization readiness.
 - [ ] Desktop/mobile regression checks and factual final report.
 
-Next implementation stages await approval of the plan. No code or backend modifications made during the initial audit.
+## Current verification
+- Uploaded brief rechecked on 2026-10-24; critical stability remains the active stage.
+- Message reconciliation tests pass (4); compilation errors in prefetch and chat skeleton usage corrected.
+- Admin bootstrap retired and deployed; payment subscription writes revoked for browser roles and profile VIP protected by a trigger. Runtime security checks pending.
+- Signed in as the requesting user: messenger opens without page exceptions, but this account has no visible conversations. No synthetic conversations or messages created; send/refresh/incoming acceptance requires a real conversation.
+- Payment provider is not connected; checkout remains explicitly unavailable.
+- Later product and performance stages remain unverified, not completed.

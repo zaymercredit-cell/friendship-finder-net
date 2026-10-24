@@ -51,37 +51,41 @@ export function useConversationList() {
         .eq("user_id", user.id)
         .is("hidden_at", null);
 
-      if (pError || !participants?.length) return [];
+      if (pError) throw pError;
+      if (!participants?.length) return [];
 
       const convIds = participants.map(p => p.conversation_id);
       const lastReadMap = new Map(participants.map(p => [p.conversation_id, p.last_read_at]));
 
-      const { data: convos } = await supabase
+      const { data: convos, error: convError } = await supabase
         .from("conversations")
         .select("*")
         .in("id", convIds)
         .order("last_message_at", { ascending: false, nullsFirst: false });
 
+      if (convError) throw convError;
       if (!convos?.length) return [];
 
-      const { data: allParticipants } = await supabase
+      const { data: allParticipants, error: participantsError } = await supabase
         .from("conversation_participants")
         .select("conversation_id, user_id, last_read_at")
         .in("conversation_id", convIds)
         .neq("user_id", user.id);
+      if (participantsError) throw participantsError;
 
       const otherUserIds = [...new Set((allParticipants || []).map(p => p.user_id))];
       const otherUserMap = new Map((allParticipants || []).map(p => [p.conversation_id, p.user_id]));
       const otherLastReadMap = new Map((allParticipants || []).map(p => [p.conversation_id, p.last_read_at]));
 
-      const { data: profiles } = await supabase
+      const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select("user_id, first_name, last_name, username, avatar_url, is_online")
         .in("user_id", otherUserIds);
+      if (profilesError) throw profilesError;
 
       const profileMap = new Map((profiles || []).map(p => [p.user_id, p]));
 
-      // BATCHED unread counts — one query for all conversations.
+      // Exact counts must not be truncated by a global message limit.
       const unreadMap = new Map<string, number>();
       await Promise.all(participants.map(async participant => {
         const { count, error } = await supabase.from("messages")
@@ -188,17 +192,24 @@ export function useMessages(conversationId: string | null) {
 
   // Mark messages as read
   useEffect(() => {
-    if (!conversationId || !user || !query.isSuccess || query.isFetching || document.visibilityState !== "visible") return;
+    if (!conversationId || !user || !query.isSuccess || query.isFetching) return;
     const latestReceived = query.data?.flat.filter(m => m.sender_id !== user.id && !m.id.startsWith("optimistic-")).at(-1);
     if (!latestReceived) return;
-    supabase
+    const markRead = () => {
+      if (document.visibilityState !== "visible") return;
+      supabase
       .from("conversation_participants")
       .update({ last_read_at: latestReceived.created_at })
       .eq("conversation_id", conversationId)
       .eq("user_id", user.id)
+      .or(`last_read_at.is.null,last_read_at.lt.${latestReceived.created_at}`)
       .then(({ error }) => {
         if (!error) queryClient.invalidateQueries({ queryKey: ["conversations", user.id] });
       });
+    };
+    markRead();
+    document.addEventListener("visibilitychange", markRead);
+    return () => document.removeEventListener("visibilitychange", markRead);
   }, [conversationId, user, query.isSuccess, query.isFetching, query.data, queryClient]);
 
   // Realtime for this conversation
