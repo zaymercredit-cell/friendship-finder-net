@@ -1,6 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { prefetchRoute } from "@/lib/route-prefetch";
+import { fetchMessagePage, nextMessageCursor, type MessageCursor } from "@/lib/message-query";
 
 /**
  * Predictive data prefetch.
@@ -65,18 +66,9 @@ export function prefetchConversation(qc: QueryClient, conversationId: string) {
     try {
       await qc.prefetchInfiniteQuery({
         queryKey: ["messages", conversationId],
-        queryFn: async () => {
-          const { data, error } = await supabase
-            .from("messages")
-            .select("*")
-            .eq("conversation_id", conversationId)
-            .order("created_at", { ascending: false })
-            .range(0, 29);
-          if (error) throw error;
-          return ((data || []) as any[]).reverse();
-        },
-        initialPageParam: 0,
-        getNextPageParam: (lastPage, allPages) => lastPage.length === 30 ? allPages.length : undefined,
+        queryFn: ({ pageParam, signal }) => fetchMessagePage(conversationId, pageParam, signal),
+        initialPageParam: null as MessageCursor | null,
+        getNextPageParam: nextMessageCursor,
         staleTime: 30_000,
       });
     } catch {
