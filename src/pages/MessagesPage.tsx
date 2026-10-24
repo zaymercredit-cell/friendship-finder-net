@@ -204,7 +204,7 @@ export default function MessagesPage() {
                 <ErrorBoundary scope="chat-messages">
                   {messagesError ? (
                     <div className="p-4 text-center"><p className="text-muted-foreground">Не удалось загрузить сообщения</p><Button variant="outline" onClick={() => refetch()}>Повторить</Button></div>
-                  ) : messagesLoading ? <div className="p-4"><RowSkeleton count={3} /></div> : prepared.length > 0 ? (
+                  ) : messagesLoading ? <div className="p-4"><RowSkeleton /><RowSkeleton /><RowSkeleton /></div> : prepared.length > 0 ? (
                     <Virtuoso
                       key={selectedId}
                       ref={virtuosoRef}

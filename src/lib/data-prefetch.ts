@@ -41,6 +41,7 @@ export function prefetchProfile(qc: QueryClient, username: string) {
             .select("*")
             .eq("username", username)
             .maybeSingle();
+          if (error) throw error;
           return data;
         },
         staleTime: 60_000,
@@ -65,7 +66,7 @@ export function prefetchConversation(qc: QueryClient, conversationId: string) {
       await qc.prefetchInfiniteQuery({
         queryKey: ["messages", conversationId],
         queryFn: async () => {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from("messages")
             .select("*")
             .eq("conversation_id", conversationId)
