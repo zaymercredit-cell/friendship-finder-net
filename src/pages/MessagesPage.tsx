@@ -42,7 +42,7 @@ export default function MessagesPage() {
   const { id: routeId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: conversations, isLoading } = useConversationList();
+  const { data: conversations, isLoading, isError: conversationsError, refetch: refetchConversations } = useConversationList();
   const [selectedId, setSelectedId] = useState<string | null>(routeId || null);
   const selectedConv = conversations?.find(c => c.id === selectedId);
   const { data: messages, isLoading: messagesLoading, isError: messagesError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useMessages(selectedId);
@@ -158,6 +158,8 @@ export default function MessagesPage() {
                   </div>
                 ))}
               </div>
+            ) : conversationsError ? (
+              <div className="p-4 text-center"><p className="text-muted-foreground">Не удалось загрузить диалоги</p><Button variant="outline" onClick={() => refetchConversations()}>Повторить</Button></div>
             ) : filteredConvs.length > 0 ? (
               <Virtuoso
                 data={filteredConvs}
@@ -204,7 +206,7 @@ export default function MessagesPage() {
                 <ErrorBoundary scope="chat-messages">
                   {messagesError ? (
                     <div className="p-4 text-center"><p className="text-muted-foreground">Не удалось загрузить сообщения</p><Button variant="outline" onClick={() => refetch()}>Повторить</Button></div>
-                  ) : messagesLoading ? <div className="p-4"><RowSkeleton count={3} /></div> : prepared.length > 0 ? (
+                  ) : messagesLoading ? <div className="p-4"><RowSkeleton /><RowSkeleton /><RowSkeleton /></div> : prepared.length > 0 ? (
                     <Virtuoso
                       key={selectedId}
                       ref={virtuosoRef}
