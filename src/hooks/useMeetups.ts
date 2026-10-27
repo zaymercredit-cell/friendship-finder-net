@@ -7,6 +7,7 @@ export function useMeetups() {
   return useQuery({
     queryKey: ["meetups"],
     queryFn: async () => {
+      if (!id) return null;
       const { data, error } = await supabase
         .from("meetups")
         .select("*")
@@ -26,7 +27,7 @@ export function useMeetupDetail(id: string | undefined) {
       const { data, error } = await supabase
         .from("meetups")
         .select("*")
-        .eq("id", id!)
+        .eq("id", id)
         .single();
       if (error) throw error;
       return data;
