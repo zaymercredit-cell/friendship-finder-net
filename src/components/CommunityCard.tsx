@@ -34,9 +34,9 @@ export default memo(function CommunityCard({ community }: Props) {
     toast.success("Ссылка скопирована!");
   };
 
-  const onlineNow = pseudoScore(community.id, 3, 25);
-  const matchFit = pseudoScore(community.id + "fit", 60, 35);
-  const hasUpcomingEvent = pseudoScore(community.id + "ev", 0, 10) > 4;
+  const onlineNow = 0;
+  const matchFit = 0;
+  const hasUpcomingEvent = false;
 
   return (
     <Link
@@ -98,10 +98,10 @@ export default memo(function CommunityCard({ community }: Props) {
               <MessageCircle className="h-3 w-3" />
               {community.postsCount}
             </span>
-            <span className="flex items-center gap-1 text-success">
+            {onlineNow > 0 && <span className="flex items-center gap-1 text-success">
               <span className="h-1.5 w-1.5 rounded-full bg-success" />
               {onlineNow} онлайн
-            </span>
+            </span>}
           </div>
 
           {/* Upcoming event hint */}
@@ -118,7 +118,7 @@ export default memo(function CommunityCard({ community }: Props) {
               <Share2 className="h-3.5 w-3.5" />
             </Button>
             <Button size="sm" className="h-8 text-[11px] rounded-xl px-4 font-semibold gap-1.5">
-              Вступить
+              Открыть
               <ArrowRight className="h-3 w-3" />
             </Button>
           </div>
