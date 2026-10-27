@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateMeetup } from "@/hooks/useMeetups";
 
-function CreateMeetupDialog() {
+export function CreateMeetupDialog() {
   const [open, setOpen] = useState(false);
   const createMeetup = useCreateMeetup();
   const [title, setTitle] = useState("");

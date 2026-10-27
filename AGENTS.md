@@ -5,3 +5,4 @@
 - Payment entitlements are server-owned; never grant subscriptions or VIP from a browser action because payment confirmation must be verified.
 - The retired admin bootstrap endpoint always refuses operations; role maintenance belongs to authenticated, server-authorized workflows rather than fixed credentials.
 - Community pages read real community rows and user-scoped memberships; never substitute mock participants or generate activity indicators because actions and claims must match persisted data.
+- Events use persisted meetups and idempotent user participation; participant profiles are fetched explicitly because no profile foreign key exists on meetup_participants.user_id.
