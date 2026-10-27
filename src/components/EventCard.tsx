@@ -4,6 +4,7 @@ import { CalendarDays, MapPin, Users, Check, Clock, ArrowRight, Share2, Sparkles
 import { toast } from "sonner";
 import { memo } from "react";
 import SmartImage from "@/components/ui/smart-image";
+import { Link } from "react-router-dom";
 
 export interface EventCardData {
   id: string;
@@ -84,7 +85,7 @@ export default memo(function EventCard({ event, onToggleGoing, compact, actionDi
           wrapperClassName="absolute inset-0 h-full w-full"
           className="object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 inset-x-0 h-24 bg-card pointer-events-none" />
 
         {/* Top badges */}
         <div className="absolute top-3 left-3 right-3 flex justify-between items-start">
@@ -156,7 +157,7 @@ export default memo(function EventCard({ event, onToggleGoing, compact, actionDi
             <><ArrowRight className="h-3.5 w-3.5" />Хочу пойти</>
           )}
         </Button>
-        {event.detailsPath && <a href={event.detailsPath} className="block text-sm text-primary">Подробнее</a>}
+        {event.detailsPath && <Link to={event.detailsPath} className="block text-sm text-primary">Подробнее</Link>}
       </div>
     </div>
   );
