@@ -4,7 +4,7 @@ import type { HistoryMessage } from "@/lib/message-history";
 export interface MessageCursor { created_at: string; id: string }
 export const MESSAGE_PAGE_SIZE = 30;
 
-export function nextMessageCursor(page: HistoryMessage[]): MessageCursor | undefined {
+export function nextMessageCursor<T extends HistoryMessage>(page: T[]): MessageCursor | undefined {
   if (page.length < MESSAGE_PAGE_SIZE) return undefined;
   const first = page.find(message => !message.id.startsWith("optimistic-"));
   return first ? { created_at: first.created_at, id: first.id } : undefined;
