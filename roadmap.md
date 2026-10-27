@@ -11,6 +11,8 @@
 
 ## Current verification
 - Continue approved phases: stabilize history pagination and disconnected-message recovery, then validate persistent community/event actions.
+- 2026-10-27: shared timestamp/ID cursor loading and 30-second newest-message recovery added; 6 history/cursor tests pass. Live populated-chat acceptance still awaits a real conversation.
+- Communities now read real rows and persist user membership; browser join → refresh → leave succeeded under requesting user's account, original membership restored, zero page exceptions. Mock participants, posts and generated card activity removed. Community creation remains unavailable; event/profile actions still pending.
 - Uploaded brief rechecked on 2026-10-24; critical stability remains the active stage.
 - Message reconciliation tests pass (4); compilation errors in prefetch and chat skeleton usage corrected.
 - Admin bootstrap retired and deployed; payment subscription writes revoked for browser roles and profile VIP protected by a trigger. Runtime security checks pending.
