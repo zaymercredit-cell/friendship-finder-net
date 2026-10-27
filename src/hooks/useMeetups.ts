@@ -7,7 +7,6 @@ export function useMeetups() {
   return useQuery({
     queryKey: ["meetups"],
     queryFn: async () => {
-      if (!id) return null;
       const { data, error } = await supabase
         .from("meetups")
         .select("*")
@@ -24,6 +23,7 @@ export function useMeetupDetail(id: string | undefined) {
     queryKey: ["meetup", id],
     enabled: !!id,
     queryFn: async () => {
+      if (!id) return null;
       const { data, error } = await supabase
         .from("meetups")
         .select("*")
@@ -40,12 +40,18 @@ export function useMeetupParticipants(meetupId: string | undefined) {
     queryKey: ["meetup-participants", meetupId],
     enabled: !!meetupId,
     queryFn: async () => {
+      if (!meetupId) return [];
       const { data, error } = await supabase
         .from("meetup_participants")
-        .select("*, profiles:user_id(first_name, last_name, avatar_url, username, city, is_online)")
-        .eq("meetup_id", meetupId!);
+        .select("*")
+        .eq("meetup_id", meetupId);
       if (error) throw error;
-      return data;
+      if (!data?.length) return [];
+      const { data: profiles, error: profileError } = await supabase.from("profiles")
+        .select("user_id, first_name, last_name, avatar_url, username, city, is_online")
+        .in("user_id", data.map(p => p.user_id));
+      if (profileError) throw profileError;
+      return data.map(p => ({ ...p, profiles: profiles?.find(profile => profile.user_id === p.user_id) || null }));
     },
   });
 }
@@ -58,7 +64,7 @@ export function useJoinMeetup() {
       if (!user) throw new Error("Not authenticated");
       const { error } = await supabase
         .from("meetup_participants")
-        .insert({ meetup_id: meetupId, user_id: user.id } as any);
+        .upsert({ meetup_id: meetupId, user_id: user.id }, { onConflict: "meetup_id,user_id", ignoreDuplicates: true });
       if (error) throw error;
     },
     onSuccess: (_, meetupId) => {
@@ -88,6 +94,7 @@ export function useLeaveMeetup() {
       qc.invalidateQueries({ queryKey: ["meetups"] });
       toast.success("Вы покинули событие");
     },
+    onError: () => toast.error("Не удалось покинуть событие"),
   });
 }
 
@@ -106,7 +113,7 @@ export function useCreateMeetup() {
       if (!user) throw new Error("Not authenticated");
       const { data, error } = await supabase
         .from("meetups")
-        .insert({ ...meetup, host_user_id: user.id } as any)
+        .insert({ ...meetup, host_user_id: user.id })
         .select()
         .single();
       if (error) throw error;
