@@ -18,6 +18,8 @@ export interface EventCardData {
   cover?: string;
   vibe?: string;
   matchCount?: number;
+  factual?: boolean;
+  detailsPath?: string;
 }
 
 const defaultCovers = [
@@ -38,18 +40,20 @@ interface Props {
   event: EventCardData;
   onToggleGoing?: (id: string) => void;
   compact?: boolean;
+  actionDisabled?: boolean;
 }
 
-export default memo(function EventCard({ event, onToggleGoing, compact }: Props) {
-  const cover = event.cover || defaultCovers[parseInt(event.id.replace(/\D/g, '') || '0') % defaultCovers.length];
-  const matchPeople = pseudoScore(event.id, 2, 8);
-  const socialEnergy = pseudoScore(event.id + "en", 50, 45);
-  const isTrustedOrg = pseudoScore(event.id + "tr", 0, 10) > 5;
+export default memo(function EventCard({ event, onToggleGoing, compact, actionDisabled }: Props) {
+  const cover = event.cover || (event.factual ? "" : defaultCovers[parseInt(event.id.replace(/\D/g, '') || '0') % defaultCovers.length]);
+  const matchPeople = event.factual ? 0 : pseudoScore(event.id, 2, 8);
+  const socialEnergy = event.factual ? 0 : pseudoScore(event.id + "en", 50, 45);
+  const isTrustedOrg = !event.factual && pseudoScore(event.id + "tr", 0, 10) > 5;
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(`${window.location.origin}/events/${event.id}`);
-    toast.success("Ссылка на событие скопирована!");
+    navigator.clipboard.writeText(`${window.location.origin}${event.detailsPath || `/events/${event.id}`}`)
+      .then(() => toast.success("Ссылка на событие скопирована!"))
+      .catch(() => toast.error("Не удалось скопировать ссылку"));
   };
 
   if (compact) {
@@ -100,8 +104,8 @@ export default memo(function EventCard({ event, onToggleGoing, compact }: Props)
 
         {/* Bottom info */}
         <div className="absolute bottom-0 inset-x-0 p-4">
-          <h3 className="text-[16px] font-bold text-white leading-tight">{event.title}</h3>
-          <div className="flex items-center gap-3 mt-1.5 text-[12px] text-white/80">
+          <h3 className="text-[16px] font-bold text-foreground leading-tight">{event.title}</h3>
+          <div className="flex flex-wrap items-center gap-3 mt-1.5 text-[12px] text-muted-foreground">
             <span className="flex items-center gap-1"><CalendarDays className="h-3 w-3" />{event.date}</span>
             <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{event.time}</span>
             <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{event.city}</span>
@@ -141,6 +145,7 @@ export default memo(function EventCard({ event, onToggleGoing, compact }: Props)
         {/* Action */}
         <Button
           size="sm"
+          disabled={actionDisabled || !onToggleGoing}
           variant={event.isGoing ? "default" : "secondary"}
           className="w-full h-9 text-[12px] font-semibold rounded-xl gap-1.5"
           onClick={(e) => { e.stopPropagation(); onToggleGoing?.(event.id); }}
@@ -151,6 +156,7 @@ export default memo(function EventCard({ event, onToggleGoing, compact }: Props)
             <><ArrowRight className="h-3.5 w-3.5" />Хочу пойти</>
           )}
         </Button>
+        {event.detailsPath && <a href={event.detailsPath} className="block text-sm text-primary">Подробнее</a>}
       </div>
     </div>
   );

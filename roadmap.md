@@ -10,6 +10,7 @@
 - [ ] Desktop/mobile regression checks and factual final report.
 
 ## Current verification
+- Active continuation: connect Events to persisted meetups and participant actions; remove synthetic event suggestions and validate join/refresh/leave where real upcoming records exist.
 - Continue approved phases: stabilize history pagination and disconnected-message recovery, then validate persistent community/event actions.
 - 2026-10-27: shared timestamp/ID cursor loading and 30-second newest-message recovery added; 6 history/cursor tests pass. Live populated-chat acceptance still awaits a real conversation.
 - Communities now read real rows and persist user membership; browser join → refresh → leave succeeded under requesting user's account, original membership restored, zero page exceptions. Mock participants, posts and generated card activity removed. Community creation remains unavailable; event/profile actions still pending.
