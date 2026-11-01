@@ -249,7 +249,7 @@ export default function DiscoverPage() {
     const { error } = await supabase.from("likes").insert({ from_user_id: user.id, to_user_id: userId });
     if (error) { toast.error("Не удалось отправить симпатию"); return; }
     setLikedIds(prev => new Set(prev).add(userId));
-    qc.invalidateQueries({ queryKey: ["daily-likes"] });
+    qc.invalidateQueries({ queryKey: ["daily-likes-count", user.id] });
     toast("Симпатия отправлена");
   };
 

@@ -7,3 +7,4 @@
 - Community pages read real community rows and user-scoped memberships; never substitute mock participants or generate activity indicators because actions and claims must match persisted data.
 - Events use persisted meetups and idempotent user participation; participant profiles are fetched explicitly because no profile foreign key exists on meetup_participants.user_id.
 - Shared edge request-auth validates user tokens and bounds request bodies before privileged or paid AI work; caller-supplied sender IDs never determine the acting user.
+- Discover uses paginated persisted profiles and durable interaction exclusions; profile pages show only author-scoped persisted posts, never mock fallbacks or random match claims.
