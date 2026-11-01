@@ -6,3 +6,4 @@
 - The retired admin bootstrap endpoint always refuses operations; role maintenance belongs to authenticated, server-authorized workflows rather than fixed credentials.
 - Community pages read real community rows and user-scoped memberships; never substitute mock participants or generate activity indicators because actions and claims must match persisted data.
 - Events use persisted meetups and idempotent user participation; participant profiles are fetched explicitly because no profile foreign key exists on meetup_participants.user_id.
+- Shared edge request-auth validates user tokens and bounds request bodies before privileged or paid AI work; caller-supplied sender IDs never determine the acting user.

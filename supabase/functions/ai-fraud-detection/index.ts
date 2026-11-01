@@ -1,10 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { authenticatedUser, boundedJson } from "../_shared/request-auth.ts";
+import { z } from "npm:zod@3";
+const schema = z.object({ message_text: z.string().min(1).max(10000), sender_id: z.string().uuid().optional() });
 
 // Patterns that indicate potential fraud/spam
 const spamPatterns = [
@@ -70,11 +70,19 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const user = await authenticatedUser(req);
+    if (!user) return new Response(JSON.stringify({ error: "Необходим вход" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let body: unknown;
+    try { body = await boundedJson(req); } catch { return new Response(JSON.stringify({ error: "Invalid request" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
+    const parsed = schema.safeParse(body);
+    if (!parsed.success || (parsed.data.sender_id && parsed.data.sender_id !== user.id)) return new Response(JSON.stringify({ error: "Invalid sender or message" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!supabaseUrl || !serviceKey) throw new Error("Server configuration missing");
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    const { message_text, sender_id } = await req.json();
+    const { message_text } = parsed.data;
+    const sender_id = user.id;
 
     if (!message_text || !sender_id) {
       return new Response(JSON.stringify({ error: "message_text and sender_id required" }), {
@@ -100,7 +108,6 @@ serve(async (req) => {
         details: {
           score: analysis.score,
           flags: analysis.flags,
-          message_preview: message_text.slice(0, 100),
           messages_last_hour: massSending.count,
         },
       });

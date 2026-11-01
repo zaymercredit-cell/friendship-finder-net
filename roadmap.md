@@ -10,6 +10,8 @@
 - [ ] Desktop/mobile regression checks and factual final report.
 
 ## Current verification
+- Additional audit found production Discover/profile mock substitution and unbounded/unauthenticated AI endpoints. Critical AI assistant and fraud caller-identity fixes implemented; bounded-context AI, profile/Discover persistence and atomic moderation remain open, not declared finished.
+- Authenticated regression: ten main routes opened with no page exceptions or error-boundary fallback. Navigation observations include a fixed two-second wait and are not Web Vitals or performance targets.
 - Final continuation requested: review profile/Discover and AI/admin in parallel; complete remaining event sibling-path defects and authenticated regression measurements. No phase is marked done without its required evidence.
 - Active continuation: connect Events to persisted meetups and participant actions; remove synthetic event suggestions and validate join/refresh/leave where real upcoming records exist.
 - Events now use real upcoming meetups with persisted join/leave and shared creation dialog; generated suggestions removed, missing participant/profile relation replaced with explicit reads. Browser shows a correct empty state and zero page exceptions; join/refresh remains unverified because there are no upcoming real meetups. No example events were created.
