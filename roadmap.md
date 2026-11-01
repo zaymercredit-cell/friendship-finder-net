@@ -10,6 +10,12 @@
 - [ ] Desktop/mobile regression checks and factual final report.
 
 ## Current verification
+- 2026-11-01: Discover now loads eligible real profiles in 48-row pages, excludes persisted likes/passes/blocks, applies the photo filter, and no longer invents mutual matches or trust/mood sections. Profiles distinguish load errors, show author-scoped posts and gallery, check upload-save errors, and remove mock fallback/friend requests.
+- AI assistant and fraud endpoints deployed and verified: anonymous requests return 401; authenticated malformed payloads return 400. Fraud identity comes from verified token; message previews removed from audit writes.
+- Ten routes rechecked after changes: no page exceptions or error fallback. This is opening-only evidence; not populated messenger, payment, moderation or Core Web Vitals acceptance.
+- Additional audit found production Discover/profile mock substitution and unbounded/unauthenticated AI endpoints. Critical AI assistant and fraud caller-identity fixes implemented; bounded-context AI, profile/Discover persistence and atomic moderation remain open, not declared finished.
+- Authenticated regression: ten main routes opened with no page exceptions or error-boundary fallback. Navigation observations include a fixed two-second wait and are not Web Vitals or performance targets.
+- Final continuation requested: review profile/Discover and AI/admin in parallel; complete remaining event sibling-path defects and authenticated regression measurements. No phase is marked done without its required evidence.
 - Active continuation: connect Events to persisted meetups and participant actions; remove synthetic event suggestions and validate join/refresh/leave where real upcoming records exist.
 - Events now use real upcoming meetups with persisted join/leave and shared creation dialog; generated suggestions removed, missing participant/profile relation replaced with explicit reads. Browser shows a correct empty state and zero page exceptions; join/refresh remains unverified because there are no upcoming real meetups. No example events were created.
 - Continue approved phases: stabilize history pagination and disconnected-message recovery, then validate persistent community/event actions.

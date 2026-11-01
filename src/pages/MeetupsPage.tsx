@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 import { useMeetups, useMeetupDetail, useMeetupParticipants, useJoinMeetup, useLeaveMeetup } from "@/hooks/useMeetups";
 import { useAuth } from "@/contexts/AuthContext";
-import { mockEvents } from "@/lib/mock-data";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -31,7 +30,9 @@ export function CreateMeetupDialog() {
   const handleCreate = async () => {
     if (!title || !date || !time) return;
     const start_time = new Date(`${date}T${time}`).toISOString();
-    await createMeetup.mutateAsync({ title, description, city, start_time, max_participants: parseInt(maxP) || 50 });
+    try {
+      await createMeetup.mutateAsync({ title: title.trim(), description, city, start_time, max_participants: parseInt(maxP) || 50 });
+    } catch { return; }
     setOpen(false);
     setTitle(""); setDescription(""); setCity(""); setDate(""); setTime("");
   };
@@ -70,10 +71,10 @@ export function CreateMeetupDialog() {
 
 function MeetupsList() {
   const navigate = useNavigate();
-  const { data: dbMeetups, isLoading } = useMeetups();
+  const { data: dbMeetups, isLoading, isError, refetch } = useMeetups();
   const [search, setSearch] = useState("");
 
-  // Combine DB meetups with mock data for demo
+  // Real upcoming meetups only.
   const allMeetups = [
     ...(dbMeetups || []).map(m => ({
       id: m.id,
@@ -87,7 +88,6 @@ function MeetupsList() {
       isGoing: false,
       isDb: true,
     })),
-    ...mockEvents.map(e => ({ ...e, isDb: false })),
   ];
 
   const filtered = allMeetups.filter(m =>
@@ -140,7 +140,6 @@ function MeetupsList() {
                 <div className="flex flex-wrap items-center gap-3 mt-2 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{event.date} · {event.time}</span>
                   {event.city && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{event.city}</span>}
-                  <span className="flex items-center gap-1"><Users className="h-3 w-3" />{event.attendees} участников</span>
                 </div>
                 {event.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
@@ -153,15 +152,15 @@ function MeetupsList() {
                 variant={event.isGoing ? "default" : "secondary"}
                 className="shrink-0 gap-1 text-xs h-8"
               >
-                {event.isGoing && <Check className="h-3.5 w-3.5" />}
-                {event.isGoing ? "Пойду" : "Хочу пойти"}
+                Подробнее
               </Button>
             </div>
           </div>
         ))}
       </div>
 
-      {filtered.length === 0 && (
+      {isError && <div><p className="text-destructive">Не удалось загрузить встречи</p><Button variant="outline" onClick={() => refetch()}>Повторить</Button></div>}
+      {!isLoading && !isError && filtered.length === 0 && (
         <div className="text-center py-16 bg-card rounded-lg border border-border">
           <CalendarDays className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-foreground mb-1">Событий не найдено</h3>
@@ -175,8 +174,8 @@ function MeetupsList() {
 function MeetupDetail({ id }: { id: string }) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { data: meetup, isLoading } = useMeetupDetail(id);
-  const { data: participants } = useMeetupParticipants(id);
+  const { data: meetup, isLoading, isError, refetch } = useMeetupDetail(id);
+  const { data: participants, isLoading: participantsLoading, isError: participantsError, refetch: refetchParticipants } = useMeetupParticipants(id);
   const joinMeetup = useJoinMeetup();
   const leaveMeetup = useLeaveMeetup();
 
@@ -191,6 +190,7 @@ function MeetupDetail({ id }: { id: string }) {
     );
   }
 
+  if (isError) return <div className="text-center py-12"><p className="text-destructive">Не удалось загрузить встречу</p><Button variant="outline" onClick={() => refetch()}>Повторить</Button></div>;
   if (!meetup) {
     return (
       <div className="max-w-2xl mx-auto text-center py-16">
@@ -235,11 +235,11 @@ function MeetupDetail({ id }: { id: string }) {
 
         <div className="flex gap-2">
           {isJoined ? (
-            <Button variant="outline" onClick={() => leaveMeetup.mutate(id)} disabled={leaveMeetup.isPending}>
+            <Button variant="outline" onClick={() => leaveMeetup.mutate(id)} disabled={participantsLoading || participantsError || leaveMeetup.isPending || joinMeetup.isPending}>
               Покинуть
             </Button>
           ) : (
-            <Button onClick={() => joinMeetup.mutate(id)} disabled={joinMeetup.isPending}>
+            <Button onClick={() => joinMeetup.mutate(id)} disabled={participantsLoading || participantsError || joinMeetup.isPending || leaveMeetup.isPending}>
               <Check className="h-4 w-4 mr-2" />
               Присоединиться
             </Button>
@@ -248,6 +248,7 @@ function MeetupDetail({ id }: { id: string }) {
       </div>
 
       {/* Participants */}
+      {participantsError && <div><p className="text-destructive">Не удалось загрузить участников</p><Button variant="outline" onClick={() => refetchParticipants()}>Повторить</Button></div>}
       {participants && participants.length > 0 && (
         <div className="bg-card rounded-lg border border-border shadow-card p-4">
           <h3 className="text-sm font-semibold text-foreground mb-3">Участники ({participants.length})</h3>

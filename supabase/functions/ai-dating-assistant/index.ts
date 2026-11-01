@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { contextSchema, parseAiRequest } from "../_shared/ai-input.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,7 +28,13 @@ serve(async (req) => {
       });
     }
 
-    const { type, targetUserId, conversationId, lastMessages } = await req.json();
+    let input;
+    try { input = await parseAiRequest(req, contextSchema); } catch { return new Response(JSON.stringify({ error: "Invalid or oversized AI context" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
+    const { type, targetUserId, conversationId, lastMessages } = input;
+    if (conversationId) {
+      const { data: member, error: memberError } = await supabase.from("conversation_participants").select("id").eq("conversation_id", conversationId).eq("user_id", user.id).maybeSingle();
+      if (memberError || !member) return new Response(JSON.stringify({ error: "Conversation access denied" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
 
     // Fetch user profile
     const { data: myProfile } = await supabase

@@ -29,6 +29,8 @@ import SmartImage from "@/components/ui/smart-image";
 import { useSessionState, readSessionState, writeSessionState } from "@/lib/session-state";
 import { useQueryClient } from "@tanstack/react-query";
 import { prefetchProfile } from "@/lib/data-prefetch";
+import { useDiscoverProfiles, asDiscoverUser } from "@/hooks/useDiscoverProfiles";
+import { PageSkeleton } from "@/components/ui/content-skeleton";
 
 interface DiscoverCardProps {
   user: typeof mockUsers[0];
@@ -93,7 +95,7 @@ const DiscoverCard = React.memo(function DiscoverCard({
 
         <div className="flex flex-wrap gap-1">
           {user.interests.slice(0, 3).map(tag => {
-            const isCommon = currentUser.interests.includes(tag);
+            const isCommon = false;
             return (
               <span key={tag} className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${isCommon ? "text-primary bg-primary/8" : "text-muted-foreground bg-secondary"}`}>{tag}</span>
             );
@@ -147,7 +149,8 @@ function SectionHeader({ icon: Icon, title, badge, action }: { icon: any; title:
 export default function DiscoverPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const directory = useDiscoverProfiles();
   const startConversation = useStartConversation();
   const { canLike, remaining, isVip } = useDailyLikes();
   const { canSuperLike, sendSuperLike } = useSuperLike();
@@ -173,16 +176,18 @@ export default function DiscoverPage() {
   const deferredGender = useDeferredValue(filterGender);
   const deferredAge = useDeferredValue(ageRange);
   const deferredOnline = useDeferredValue(filterOnline);
+  const deferredPhoto = useDeferredValue(filterWithPhoto);
   const deferredReadyMeet = useDeferredValue(filterReadyMeet);
   const deferredGoals = useDeferredValue(selectedGoals);
   const deferredInterests = useDeferredValue(selectedInterests);
 
   const scoredUsers = useMemo(() => {
-    return mockUsers
-      .filter(u => u.id !== currentUser.id && u.showInDiscover !== false)
-      .map(u => ({ user: u, score: calculateMatchScore(currentUser, u) }))
+    if (!profile) return [];
+    return (directory.data?.pages.flat() || [])
+      .filter(entry => !entry.excluded).map(entry => entry.profile)
+      .map(u => ({ user: u, score: calculateMatchScore(asDiscoverUser(profile), u) }))
       .sort((a, b) => b.score - a.score);
-  }, []);
+  }, [directory.data, profile]);
 
   const filteredUsers = useMemo(() => {
     const goalsSet = deferredGoals.length ? new Set(deferredGoals) : null;
@@ -193,12 +198,13 @@ export default function DiscoverPage() {
       if (deferredGender !== "any" && user.gender !== deferredGender) return false;
       if (user.age && (user.age < deferredAge[0] || user.age > deferredAge[1])) return false;
       if (deferredOnline && !user.isOnline) return false;
+      if (deferredPhoto && !user.avatar) return false;
       if (deferredReadyMeet && !user.readyForMeetings) return false;
       if (goalsSet && !(user.communicationGoals || []).some(g => goalsSet.has(g))) return false;
       if (interestsSet && !user.interests.some(i => interestsSet.has(i))) return false;
       return true;
     });
-  }, [scoredUsers, deferredCity, deferredGender, deferredAge, deferredOnline, deferredReadyMeet, deferredGoals, deferredInterests, passedIds, likedIds]);
+  }, [scoredUsers, deferredCity, deferredGender, deferredAge, deferredOnline, deferredPhoto, deferredReadyMeet, deferredGoals, deferredInterests, passedIds, likedIds]);
 
   // ── Restore + persist window scroll position across back/forward.
   const SCROLL_KEY = "discover.scrollY";
@@ -239,26 +245,20 @@ export default function DiscoverPage() {
       toast.error("Лимит симпатий исчерпан", { description: "Активируйте VIP для безлимитных симпатий" });
       return;
     }
+    if (!user) return;
+    const { error } = await supabase.from("likes").insert({ from_user_id: user.id, to_user_id: userId });
+    if (error) { toast.error("Не удалось отправить симпатию"); return; }
     setLikedIds(prev => new Set(prev).add(userId));
-    if (user) {
-      try { await supabase.from("likes").insert({ from_user_id: user.id, to_user_id: userId }); } catch {}
-    }
-    if (Math.random() < 0.2) {
-      toast.success("🎉 Взаимная симпатия!", {
-        description: "Вы понравились друг другу! Можете начать общение.",
-        action: { label: "Перейти", onClick: () => navigate("/matches") },
-      });
-    } else {
-      toast("❤️ Симпатия отправлена");
-    }
+    qc.invalidateQueries({ queryKey: ["daily-likes-count", user.id] });
+    toast("Симпатия отправлена");
   };
 
   const handlePass = async (e: React.MouseEvent, userId: string) => {
     e.stopPropagation();
+    if (!user) return;
+    const { error } = await supabase.from("passes").insert({ from_user_id: user.id, to_user_id: userId });
+    if (error) { toast.error("Не удалось пропустить анкету"); return; }
     setPassedIds(prev => new Set(prev).add(userId));
-    if (user) {
-      try { await supabase.from("passes").insert({ from_user_id: user.id, to_user_id: userId }); } catch {}
-    }
   };
 
   const handleMessage = async (e: React.MouseEvent, userId: string) => {
@@ -327,6 +327,8 @@ export default function DiscoverPage() {
       </div>
 
       {/* ═══ FILTERS ═══ */}
+      {directory.isLoading && <PageSkeleton />}
+      {directory.isError && <div><p className="text-destructive">Не удалось загрузить анкеты</p><Button variant="outline" onClick={() => directory.refetch()}>Повторить</Button></div>}
       {showFilters && (
         <div className="premium-card p-5 space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
@@ -443,25 +445,6 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {/* ═══ TRENDING TODAY — Growth Engine ═══ */}
-      {!showFilters && filteredUsers.length > 2 && (
-        <div>
-          <SectionHeader icon={TrendingUp} title="В тренде сегодня" badge="🔥 Hot" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.slice(0, 3).map(({ user, score }) => (
-              <DiscoverCard
-                key={user.id + "-trend"} user={user} score={score}
-                onClick={() => navigate(`/profile/${user.username}`)}
-                onLike={(e) => handleLike(e, user.id)}
-                onPass={(e) => handlePass(e, user.id)}
-                onMessage={(e) => handleMessage(e, user.id)}
-                onSuperLike={(e) => handleSuperLike(e, user.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ═══ ONLINE NOW ═══ */}
       {onlineUsers.length > 0 && !showFilters && (
         <div className="premium-card p-4">
@@ -508,56 +491,6 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {/* ═══ HIGH CHEMISTRY ═══ */}
-      {!showFilters && filteredUsers.length > 3 && (
-        <div>
-          <SectionHeader icon={Flame} title="Высокая химия" badge="AI Chemistry" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.slice(2, 5).map(({ user, score }) => (
-              <DiscoverCard
-                key={user.id + "-chem"} user={user} score={score}
-                onClick={() => navigate(`/profile/${user.username}`)}
-                onLike={(e) => handleLike(e, user.id)}
-                onPass={(e) => handlePass(e, user.id)}
-                onMessage={(e) => handleMessage(e, user.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ SAME MOOD TODAY ═══ */}
-      {!showFilters && filteredUsers.length > 7 && (
-        <div>
-          <SectionHeader icon={Smile} title="Сегодня хотят общаться" badge="Mood" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {filteredUsers.slice(6, 10).map(({ user, score }) => (
-              <div
-                key={user.id + "-mood"}
-                className="premium-card p-3 cursor-pointer"
-                onClick={() => navigate(`/profile/${user.username}`)}
-              >
-                <div className="flex items-center gap-2.5 mb-2">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.avatar} className="object-cover" />
-                    <AvatarFallback>{user.name[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-foreground truncate">{user.name.split(" ")[0]}, {user.age}</p>
-                    <p className="text-[10px] text-muted-foreground">{user.city}</p>
-                  </div>
-                </div>
-                <MoodBadge mood={["chatty", "walk", "open", "coffee"][parseInt(user.id) % 4]} compact />
-                <div className="flex items-center gap-1 mt-2">
-                  <Sparkles className="h-3 w-3 text-primary" />
-                  <span className="text-[11px] font-medium text-primary">{score}% совместимость</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ═══ SIMILAR INTERESTS ═══ */}
       {!showFilters && filteredUsers.length > 10 && (
         <div>
@@ -568,24 +501,6 @@ export default function DiscoverPage() {
                 key={user.id + "-interest"}
                 user={user}
                 score={score}
-                onClick={() => navigate(`/profile/${user.username}`)}
-                onLike={(e) => handleLike(e, user.id)}
-                onPass={(e) => handlePass(e, user.id)}
-                onMessage={(e) => handleMessage(e, user.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ EASY TO TALK TO ═══ */}
-      {!showFilters && filteredUsers.length > 5 && (
-        <div>
-          <SectionHeader icon={Coffee} title="Легко общаться" badge="Conversation AI" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.slice(4, 7).map(({ user, score }) => (
-              <DiscoverCard
-                key={user.id + "-conv"} user={user} score={score}
                 onClick={() => navigate(`/profile/${user.username}`)}
                 onLike={(e) => handleLike(e, user.id)}
                 onPass={(e) => handlePass(e, user.id)}
@@ -636,47 +551,12 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {/* ═══ HIGH TRUST ═══ */}
-      {!showFilters && filteredUsers.length > 12 && (
-        <div>
-          <SectionHeader icon={Eye} title="Высокий уровень доверия" badge="Trust" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.slice(11, 14).map(({ user, score }) => (
-              <DiscoverCard
-                key={user.id + "-trust"} user={user} score={score}
-                onClick={() => navigate(`/profile/${user.username}`)}
-                onLike={(e) => handleLike(e, user.id)}
-                onPass={(e) => handlePass(e, user.id)}
-                onMessage={(e) => handleMessage(e, user.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ LIKELY TO REPLY ═══ */}
-      {!showFilters && filteredUsers.length > 15 && (
-        <div>
-          <SectionHeader icon={MessageCircle} title="Скорее всего ответят" badge="AI" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.slice(14, 17).map(({ user, score }) => (
-              <DiscoverCard
-                key={user.id + "-reply"} user={user} score={score}
-                onClick={() => navigate(`/profile/${user.username}`)}
-                onLike={(e) => handleLike(e, user.id)}
-                onPass={(e) => handlePass(e, user.id)}
-                onMessage={(e) => handleMessage(e, user.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ═══ REST — virtualized with adaptive preload ═══ */}
       {restUsers.length > 0 && (
         <div>
           <SectionHeader icon={Users} title="Ещё анкеты" badge={`${restUsers.length}`} />
           <VirtuosoGrid
+            endReached={() => { if (directory.hasNextPage && !directory.isFetchingNextPage) directory.fetchNextPage(); }}
             useWindowScroll
             data={restUsers}
             // Render ~2 rows above/below viewport for buttery smooth scroll
@@ -701,7 +581,7 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {filteredUsers.length === 0 && (
+      {!directory.isLoading && !directory.isError && filteredUsers.length === 0 && (
         <div className="text-center py-20 premium-card">
           <Heart className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
           <h3 className="text-[18px] font-semibold text-foreground mb-2">Анкеты не найдены</h3>
@@ -716,7 +596,7 @@ export default function DiscoverPage() {
       )}
 
       {/* ═══ COMMUNITY MATCHING ═══ */}
-      <CommunityMatchingSection />
+      {directory.hasNextPage && <Button variant="outline" disabled={directory.isFetchingNextPage} onClick={() => directory.fetchNextPage()}>Ещё анкеты</Button>}
 
       <VipPromoBanner />
       <VipPaywallModal open={showPaywall} onOpenChange={setShowPaywall} feature="superlike" />

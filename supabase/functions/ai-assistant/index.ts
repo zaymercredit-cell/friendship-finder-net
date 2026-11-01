@@ -1,8 +1,8 @@
 // AI Assistant — глобальный помощник по платформе ВДрузьях
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { authenticatedUser, boundedJson } from "../_shared/request-auth.ts";
+import { z } from "npm:zod@3";
+const schema = z.object({ messages: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().min(1).max(4000) })).min(1).max(20) });
 
 const SYSTEM_PROMPT = `Ты — дружелюбный AI-помощник платформы знакомств "ВДрузьях".
 Твоя роль:
@@ -19,7 +19,12 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages } = await req.json();
+    if (!await authenticatedUser(req)) return new Response(JSON.stringify({ error: "Необходим вход" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let body: unknown;
+    try { body = await boundedJson(req); } catch { return new Response(JSON.stringify({ error: "Некорректный или слишком большой запрос" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) return new Response(JSON.stringify({ error: "Некорректные сообщения" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { messages } = parsed.data;
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY missing");
 
