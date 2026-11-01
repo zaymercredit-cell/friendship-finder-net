@@ -95,7 +95,7 @@ const DiscoverCard = React.memo(function DiscoverCard({
 
         <div className="flex flex-wrap gap-1">
           {user.interests.slice(0, 3).map(tag => {
-            const isCommon = currentUser.interests.includes(tag);
+            const isCommon = false;
             return (
               <span key={tag} className={`text-[10px] px-2 py-0.5 rounded-md font-medium ${isCommon ? "text-primary bg-primary/8" : "text-muted-foreground bg-secondary"}`}>{tag}</span>
             );
@@ -445,25 +445,6 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {/* ═══ TRENDING TODAY — Growth Engine ═══ */}
-      {!showFilters && filteredUsers.length > 2 && (
-        <div>
-          <SectionHeader icon={TrendingUp} title="В тренде сегодня" badge="🔥 Hot" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.slice(0, 3).map(({ user, score }) => (
-              <DiscoverCard
-                key={user.id + "-trend"} user={user} score={score}
-                onClick={() => navigate(`/profile/${user.username}`)}
-                onLike={(e) => handleLike(e, user.id)}
-                onPass={(e) => handlePass(e, user.id)}
-                onMessage={(e) => handleMessage(e, user.id)}
-                onSuperLike={(e) => handleSuperLike(e, user.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ═══ ONLINE NOW ═══ */}
       {onlineUsers.length > 0 && !showFilters && (
         <div className="premium-card p-4">
@@ -510,56 +491,6 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {/* ═══ HIGH CHEMISTRY ═══ */}
-      {!showFilters && filteredUsers.length > 3 && (
-        <div>
-          <SectionHeader icon={Flame} title="Высокая химия" badge="AI Chemistry" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.slice(2, 5).map(({ user, score }) => (
-              <DiscoverCard
-                key={user.id + "-chem"} user={user} score={score}
-                onClick={() => navigate(`/profile/${user.username}`)}
-                onLike={(e) => handleLike(e, user.id)}
-                onPass={(e) => handlePass(e, user.id)}
-                onMessage={(e) => handleMessage(e, user.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ SAME MOOD TODAY ═══ */}
-      {!showFilters && filteredUsers.length > 7 && (
-        <div>
-          <SectionHeader icon={Smile} title="Сегодня хотят общаться" badge="Mood" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {filteredUsers.slice(6, 10).map(({ user, score }) => (
-              <div
-                key={user.id + "-mood"}
-                className="premium-card p-3 cursor-pointer"
-                onClick={() => navigate(`/profile/${user.username}`)}
-              >
-                <div className="flex items-center gap-2.5 mb-2">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={user.avatar} className="object-cover" />
-                    <AvatarFallback>{user.name[0]}</AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-foreground truncate">{user.name.split(" ")[0]}, {user.age}</p>
-                    <p className="text-[10px] text-muted-foreground">{user.city}</p>
-                  </div>
-                </div>
-                <MoodBadge mood={["chatty", "walk", "open", "coffee"][parseInt(user.id) % 4]} compact />
-                <div className="flex items-center gap-1 mt-2">
-                  <Sparkles className="h-3 w-3 text-primary" />
-                  <span className="text-[11px] font-medium text-primary">{score}% совместимость</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ═══ SIMILAR INTERESTS ═══ */}
       {!showFilters && filteredUsers.length > 10 && (
         <div>
@@ -570,24 +501,6 @@ export default function DiscoverPage() {
                 key={user.id + "-interest"}
                 user={user}
                 score={score}
-                onClick={() => navigate(`/profile/${user.username}`)}
-                onLike={(e) => handleLike(e, user.id)}
-                onPass={(e) => handlePass(e, user.id)}
-                onMessage={(e) => handleMessage(e, user.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ EASY TO TALK TO ═══ */}
-      {!showFilters && filteredUsers.length > 5 && (
-        <div>
-          <SectionHeader icon={Coffee} title="Легко общаться" badge="Conversation AI" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.slice(4, 7).map(({ user, score }) => (
-              <DiscoverCard
-                key={user.id + "-conv"} user={user} score={score}
                 onClick={() => navigate(`/profile/${user.username}`)}
                 onLike={(e) => handleLike(e, user.id)}
                 onPass={(e) => handlePass(e, user.id)}
@@ -628,42 +541,6 @@ export default function DiscoverPage() {
             {newUsers.slice(0, 3).map(({ user, score }) => (
               <DiscoverCard
                 key={user.id} user={user} score={score}
-                onClick={() => navigate(`/profile/${user.username}`)}
-                onLike={(e) => handleLike(e, user.id)}
-                onPass={(e) => handlePass(e, user.id)}
-                onMessage={(e) => handleMessage(e, user.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ HIGH TRUST ═══ */}
-      {!showFilters && filteredUsers.length > 12 && (
-        <div>
-          <SectionHeader icon={Eye} title="Высокий уровень доверия" badge="Trust" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.slice(11, 14).map(({ user, score }) => (
-              <DiscoverCard
-                key={user.id + "-trust"} user={user} score={score}
-                onClick={() => navigate(`/profile/${user.username}`)}
-                onLike={(e) => handleLike(e, user.id)}
-                onPass={(e) => handlePass(e, user.id)}
-                onMessage={(e) => handleMessage(e, user.id)}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ LIKELY TO REPLY ═══ */}
-      {!showFilters && filteredUsers.length > 15 && (
-        <div>
-          <SectionHeader icon={MessageCircle} title="Скорее всего ответят" badge="AI" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredUsers.slice(14, 17).map(({ user, score }) => (
-              <DiscoverCard
-                key={user.id + "-reply"} user={user} score={score}
                 onClick={() => navigate(`/profile/${user.username}`)}
                 onLike={(e) => handleLike(e, user.id)}
                 onPass={(e) => handlePass(e, user.id)}
