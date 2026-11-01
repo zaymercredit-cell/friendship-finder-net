@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { avatarSchema, parseAiRequest } from "../_shared/ai-input.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,7 +28,9 @@ serve(async (req) => {
       });
     }
 
-    const { targetUserId, question, history } = await req.json();
+    let input;
+    try { input = await parseAiRequest(req, avatarSchema); } catch { return new Response(JSON.stringify({ error: "Invalid or oversized AI context" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
+    const { targetUserId, question, history } = input;
     if (!targetUserId || !question) {
       return new Response(JSON.stringify({ error: "targetUserId and question required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
