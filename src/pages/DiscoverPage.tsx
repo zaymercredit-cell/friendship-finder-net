@@ -29,6 +29,8 @@ import SmartImage from "@/components/ui/smart-image";
 import { useSessionState, readSessionState, writeSessionState } from "@/lib/session-state";
 import { useQueryClient } from "@tanstack/react-query";
 import { prefetchProfile } from "@/lib/data-prefetch";
+import { useDiscoverProfiles, asDiscoverUser } from "@/hooks/useDiscoverProfiles";
+import { PageSkeleton } from "@/components/ui/content-skeleton";
 
 interface DiscoverCardProps {
   user: typeof mockUsers[0];
@@ -147,7 +149,8 @@ function SectionHeader({ icon: Icon, title, badge, action }: { icon: any; title:
 export default function DiscoverPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
+  const directory = useDiscoverProfiles();
   const startConversation = useStartConversation();
   const { canLike, remaining, isVip } = useDailyLikes();
   const { canSuperLike, sendSuperLike } = useSuperLike();
@@ -173,16 +176,18 @@ export default function DiscoverPage() {
   const deferredGender = useDeferredValue(filterGender);
   const deferredAge = useDeferredValue(ageRange);
   const deferredOnline = useDeferredValue(filterOnline);
+  const deferredPhoto = useDeferredValue(filterWithPhoto);
   const deferredReadyMeet = useDeferredValue(filterReadyMeet);
   const deferredGoals = useDeferredValue(selectedGoals);
   const deferredInterests = useDeferredValue(selectedInterests);
 
   const scoredUsers = useMemo(() => {
-    return mockUsers
-      .filter(u => u.id !== currentUser.id && u.showInDiscover !== false)
-      .map(u => ({ user: u, score: calculateMatchScore(currentUser, u) }))
+    if (!profile) return [];
+    return (directory.data?.pages.flat() || [])
+      .filter(entry => !entry.excluded).map(entry => entry.profile)
+      .map(u => ({ user: u, score: calculateMatchScore(asDiscoverUser(profile), u) }))
       .sort((a, b) => b.score - a.score);
-  }, []);
+  }, [directory.data, profile]);
 
   const filteredUsers = useMemo(() => {
     const goalsSet = deferredGoals.length ? new Set(deferredGoals) : null;
@@ -193,12 +198,13 @@ export default function DiscoverPage() {
       if (deferredGender !== "any" && user.gender !== deferredGender) return false;
       if (user.age && (user.age < deferredAge[0] || user.age > deferredAge[1])) return false;
       if (deferredOnline && !user.isOnline) return false;
+      if (deferredPhoto && !user.avatar) return false;
       if (deferredReadyMeet && !user.readyForMeetings) return false;
       if (goalsSet && !(user.communicationGoals || []).some(g => goalsSet.has(g))) return false;
       if (interestsSet && !user.interests.some(i => interestsSet.has(i))) return false;
       return true;
     });
-  }, [scoredUsers, deferredCity, deferredGender, deferredAge, deferredOnline, deferredReadyMeet, deferredGoals, deferredInterests, passedIds, likedIds]);
+  }, [scoredUsers, deferredCity, deferredGender, deferredAge, deferredOnline, deferredPhoto, deferredReadyMeet, deferredGoals, deferredInterests, passedIds, likedIds]);
 
   // ── Restore + persist window scroll position across back/forward.
   const SCROLL_KEY = "discover.scrollY";
@@ -239,26 +245,20 @@ export default function DiscoverPage() {
       toast.error("Лимит симпатий исчерпан", { description: "Активируйте VIP для безлимитных симпатий" });
       return;
     }
+    if (!user) return;
+    const { error } = await supabase.from("likes").insert({ from_user_id: user.id, to_user_id: userId });
+    if (error) { toast.error("Не удалось отправить симпатию"); return; }
     setLikedIds(prev => new Set(prev).add(userId));
-    if (user) {
-      try { await supabase.from("likes").insert({ from_user_id: user.id, to_user_id: userId }); } catch {}
-    }
-    if (Math.random() < 0.2) {
-      toast.success("🎉 Взаимная симпатия!", {
-        description: "Вы понравились друг другу! Можете начать общение.",
-        action: { label: "Перейти", onClick: () => navigate("/matches") },
-      });
-    } else {
-      toast("❤️ Симпатия отправлена");
-    }
+    qc.invalidateQueries({ queryKey: ["daily-likes"] });
+    toast("Симпатия отправлена");
   };
 
   const handlePass = async (e: React.MouseEvent, userId: string) => {
     e.stopPropagation();
+    if (!user) return;
+    const { error } = await supabase.from("passes").insert({ from_user_id: user.id, to_user_id: userId });
+    if (error) { toast.error("Не удалось пропустить анкету"); return; }
     setPassedIds(prev => new Set(prev).add(userId));
-    if (user) {
-      try { await supabase.from("passes").insert({ from_user_id: user.id, to_user_id: userId }); } catch {}
-    }
   };
 
   const handleMessage = async (e: React.MouseEvent, userId: string) => {
@@ -327,6 +327,8 @@ export default function DiscoverPage() {
       </div>
 
       {/* ═══ FILTERS ═══ */}
+      {directory.isLoading && <PageSkeleton />}
+      {directory.isError && <div><p className="text-destructive">Не удалось загрузить анкеты</p><Button variant="outline" onClick={() => directory.refetch()}>Повторить</Button></div>}
       {showFilters && (
         <div className="premium-card p-5 space-y-4 animate-fade-in">
           <div className="flex items-center justify-between">
@@ -677,6 +679,7 @@ export default function DiscoverPage() {
         <div>
           <SectionHeader icon={Users} title="Ещё анкеты" badge={`${restUsers.length}`} />
           <VirtuosoGrid
+            endReached={() => { if (directory.hasNextPage && !directory.isFetchingNextPage) directory.fetchNextPage(); }}
             useWindowScroll
             data={restUsers}
             // Render ~2 rows above/below viewport for buttery smooth scroll
@@ -701,7 +704,7 @@ export default function DiscoverPage() {
         </div>
       )}
 
-      {filteredUsers.length === 0 && (
+      {!directory.isLoading && !directory.isError && filteredUsers.length === 0 && (
         <div className="text-center py-20 premium-card">
           <Heart className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
           <h3 className="text-[18px] font-semibold text-foreground mb-2">Анкеты не найдены</h3>
@@ -716,7 +719,7 @@ export default function DiscoverPage() {
       )}
 
       {/* ═══ COMMUNITY MATCHING ═══ */}
-      <CommunityMatchingSection />
+      {directory.hasNextPage && <Button variant="outline" disabled={directory.isFetchingNextPage} onClick={() => directory.fetchNextPage()}>Ещё анкеты</Button>}
 
       <VipPromoBanner />
       <VipPaywallModal open={showPaywall} onOpenChange={setShowPaywall} feature="superlike" />
