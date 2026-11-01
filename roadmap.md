@@ -10,6 +10,7 @@
 - [ ] Desktop/mobile regression checks and factual final report.
 
 ## Current verification
+- Final continuation requested: review profile/Discover and AI/admin in parallel; complete remaining event sibling-path defects and authenticated regression measurements. No phase is marked done without its required evidence.
 - Active continuation: connect Events to persisted meetups and participant actions; remove synthetic event suggestions and validate join/refresh/leave where real upcoming records exist.
 - Events now use real upcoming meetups with persisted join/leave and shared creation dialog; generated suggestions removed, missing participant/profile relation replaced with explicit reads. Browser shows a correct empty state and zero page exceptions; join/refresh remains unverified because there are no upcoming real meetups. No example events were created.
 - Continue approved phases: stabilize history pagination and disconnected-message recovery, then validate persistent community/event actions.
