@@ -20,7 +20,9 @@ import { useImageUpload } from "@/hooks/useImageUpload";
 import ImageUploadButton from "@/components/ImageUploadButton";
 import ImagePreviewDialog from "@/components/ImagePreviewDialog";
 import PhotoGalleryLightbox from "@/components/PhotoGalleryLightbox";
-import { mockPosts, mockUsers, mockCommunities, currentUser as mockCurrentUser, type User as MockUser } from "@/lib/mock-data";
+import { type User as MockUser, type Post } from "@/lib/mock-data";
+import { asDiscoverUser } from "@/hooks/useDiscoverProfiles";
+import { PageSkeleton } from "@/components/ui/content-skeleton";
 import PostCard from "@/components/PostCard";
 import AiCompatibilityCard from "@/components/ai/AiCompatibilityCard";
 import PersonalityTestCard from "@/components/ai/PersonalityTestCard";
@@ -195,11 +197,16 @@ export default function ProfilePage() {
   const startConversation = useStartConversation();
   const recordView = useRecordProfileView();
 
-  const { data: dbProfile, isLoading } = useQuery({
+  const { data: dbProfile, isLoading, isError: profileError, refetch: reloadProfile } = useQuery({
     queryKey: ["profile", isOwnProfile ? myProfile?.user_id : username],
     queryFn: async () => {
       if (isOwnProfile && myProfile) return myProfile;
-      const { data } = await supabase.from("profiles").select("*").eq("username", username!).single();
+      if (!username) return null;
+      const lookup = supabase.from("profiles").select("*");
+      const isId = /^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(username);
+      const { data, error } = await (isId ? lookup.eq("user_id", username) : lookup.eq("username", username)).maybeSingle();
+      if (error) throw error;
+      if (data && data.privacy_profile_visible !== "everyone" && data.user_id !== user?.id) return null;
       return data;
     },
     enabled: isOwnProfile ? !!myProfile : !!username,
@@ -209,11 +216,16 @@ export default function ProfilePage() {
     if (!isOwnProfile && dbProfile?.user_id) recordView.mutate(dbProfile.user_id);
   }, [isOwnProfile, dbProfile?.user_id]);
 
-  const mockUser = useMemo(() => {
-    if (dbProfile || isOwnProfile) return null;
-    return mockUsers.find(u => u.username === username) || null;
-  }, [dbProfile, isOwnProfile, username]);
-
+  const mockUser = null;
+  const profilePosts = useQuery({
+    queryKey: ["profile-posts", dbProfile?.user_id], enabled: !!dbProfile?.user_id,
+    queryFn: async () => {
+      if (!dbProfile) return [];
+      const { data, error } = await supabase.from("posts").select("*").eq("author_id", dbProfile.user_id).order("created_at", { ascending: false }).limit(30);
+      if (error) throw error;
+      return (data || []).map(p => ({ id: p.id, author: asDiscoverUser(dbProfile), content: p.content, images: p.images || [], createdAt: p.created_at, likes: p.likes_count, comments: p.comments_count, shares: p.shares_count, isLiked: false, visibility: p.visibility as Post["visibility"] }));
+    },
+  });
   const dp: DisplayProfile | null = useMemo(() => {
     if (dbProfile) {
       const p = dbProfile as any;
@@ -225,7 +237,7 @@ export default function ProfilePage() {
         interests: p.interests || [], communicationGoals: p.communication_goals || [],
         lookingForGender: p.looking_for_gender || undefined,
         readyForMeetings: p.ready_for_meetings ?? false, readyForChat: p.ready_for_chat ?? true,
-        friendsCount: 47, postsCount: mockPosts.length, communitiesCount: 5,
+        friendsCount: 0, postsCount: profilePosts.data?.length || 0, communitiesCount: 0,
         createdAt: p.created_at, work: p.work || undefined, education: p.education || undefined,
         idealDate: p.ideal_date || undefined,
         favoriteMovies: p.favorite_movies || [], favoriteMusic: p.favorite_music || [],
@@ -235,31 +247,17 @@ export default function ProfilePage() {
         isMock: false,
       };
     }
-    if (mockUser) {
-      return {
-        name: mockUser.name, username: mockUser.username, avatar: mockUser.avatar, cover: "",
-        age: mockUser.age, city: mockUser.city, gender: mockUser.gender,
-        isOnline: mockUser.isOnline, lastSeen: mockUser.lastSeen, about: mockUser.about,
-        interests: mockUser.interests, communicationGoals: mockUser.communicationGoals || [],
-        lookingForGender: mockUser.lookingForGender, readyForMeetings: mockUser.readyForMeetings,
-        readyForChat: mockUser.readyForChat, friendsCount: mockUser.friendsCount,
-        postsCount: mockUser.postsCount, communitiesCount: mockUser.communitiesCount,
-        isMock: true, mockUser, work: "", education: "", idealDate: "", statusText: "",
-        favoriteMovies: [], favoriteMusic: [], favoriteBooks: [], favoritePlaces: [],
-        temperament: undefined, communicationStyle: undefined, lifeValues: [], lifestyle: [],
-      };
-    }
     return null;
-  }, [dbProfile, mockUser]);
+  }, [dbProfile, profilePosts.data]);
 
   const avatarUpload = useImageUpload({
     bucket: "avatars", maxSize: 5 * 1024 * 1024,
-    onSuccess: async (url) => { if (!user) return; await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", user.id); refreshProfile(); },
+    onSuccess: async (url) => { if (!user) return; const { error } = await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", user.id); if (error) { toast.error("Не удалось сохранить фото"); return; } await refreshProfile(); reloadProfile(); },
   });
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
   const coverUpload = useImageUpload({
     bucket: "profile-covers", maxSize: 10 * 1024 * 1024,
-    onSuccess: async (url) => { if (!user) return; await supabase.from("profiles").update({ cover_url: url }).eq("user_id", user.id); refreshProfile(); },
+    onSuccess: async (url) => { if (!user) return; const { error } = await supabase.from("profiles").update({ cover_url: url }).eq("user_id", user.id); if (error) { toast.error("Не удалось сохранить обложку"); return; } await refreshProfile(); reloadProfile(); },
   });
   const [coverDialogOpen, setCoverDialogOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -273,18 +271,11 @@ export default function ProfilePage() {
 
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const galleryImages = mockPosts.filter(p => p.images).flatMap(p => p.images!);
-
-  const userPosts = useMemo(() => {
-    if (dp?.isMock && dp.mockUser) return mockPosts.filter(p => p.author.id === dp.mockUser!.id).slice(0, 10);
-    return mockPosts.slice(0, 5);
-  }, [dp]);
-
-  const userFriends = useMemo(() => mockUsers.slice(0, 12), []);
-
-  if (isLoading && !mockUser) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-  }
+  const userPosts = profilePosts.data || [];
+  const galleryImages = userPosts.flatMap(p => p.images || []);
+  const userFriends: MockUser[] = [];
+  if (profileError) return <div className="py-12 text-center"><p className="text-destructive">Не удалось загрузить профиль</p><Button variant="outline" onClick={() => reloadProfile()}>Повторить</Button></div>;
+  if (isLoading) return <PageSkeleton />;
   if (!dp) {
     return (
       <div className="max-w-xl mx-auto text-center py-20">
@@ -383,7 +374,11 @@ export default function ProfilePage() {
               </Link>
             ) : (
               <>
-                <Button size="sm" className="gap-1.5 text-[13px] h-10 rounded-full shadow-sm px-5 font-semibold" onClick={() => toast("❤️ Симпатия отправлена")}>
+                <Button size="sm" className="gap-1.5 text-[13px] h-10 rounded-full shadow-sm px-5 font-semibold" onClick={async () => {
+                  if (!user || !dbProfile) return;
+                  const { error } = await supabase.from("likes").insert({ from_user_id: user.id, to_user_id: dbProfile.user_id });
+                  if (error) toast.error("Не удалось отправить симпатию"); else toast("Симпатия отправлена");
+                }}>
                   <Heart className="h-4 w-4" />Симпатия
                 </Button>
                 <Button size="sm" variant="secondary" className="gap-1.5 text-[13px] h-10 rounded-full px-4" onClick={async () => {
@@ -392,7 +387,7 @@ export default function ProfilePage() {
                 }}>
                   <MessageCircle className="h-4 w-4" />Написать
                 </Button>
-                <Button size="sm" variant="outline" className="h-10 w-10 p-0 rounded-full" onClick={() => toast("Заявка отправлена")}>
+                <Button size="sm" variant="outline" className="h-10 w-10 p-0 rounded-full" disabled title="Заявки в друзья пока недоступны">
                   <UserPlus className="h-4 w-4" />
                 </Button>
                 <DropdownMenu>
@@ -650,10 +645,10 @@ export default function ProfilePage() {
 
         {/* Posts */}
         <StorySection icon={FileText} title="Посты">
-          {userPosts.length > 0 ? (
+          {profilePosts.isLoading ? <PageSkeleton /> : profilePosts.isError ? <div><p className="text-destructive">Не удалось загрузить публикации</p><Button variant="outline" onClick={() => profilePosts.refetch()}>Повторить</Button></div> : userPosts.length > 0 ? (
             <div className="space-y-3">
               {userPosts.slice(0, 3).map(post => (
-                <PostCard key={post.id} post={{ ...post, author: dp.isMock && dp.mockUser ? dp.mockUser : mockCurrentUser }} />
+                <PostCard key={post.id} post={post} />
               ))}
               {userPosts.length > 3 && (
                 <p className="text-[13px] text-primary cursor-pointer hover:underline text-center pt-1 font-medium">Показать все посты →</p>
@@ -668,7 +663,7 @@ export default function ProfilePage() {
         </StorySection>
 
         {/* Friends */}
-        <StorySection icon={Users} title="Друзья">
+        {userFriends.length > 0 && <StorySection icon={Users} title="Друзья">
           <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
             {userFriends.slice(0, 12).map(f => (
               <Link key={f.id} to={`/profile/${f.username}`} className="text-center group">
@@ -681,7 +676,7 @@ export default function ProfilePage() {
               </Link>
             ))}
           </div>
-        </StorySection>
+        </StorySection>}
       </div>
 
       {/* Dialogs */}
