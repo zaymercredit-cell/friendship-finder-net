@@ -79,7 +79,7 @@ const DiscoverCard = React.memo(function DiscoverCard({
 
         <div className="absolute bottom-0 inset-x-0 p-4">
           <h3 className="text-[17px] font-bold text-white leading-tight">
-            {user.name.split(" ")[0]}, {user.age}
+            {user.name.split(" ")[0]}{user.age ? `, ${user.age}` : ""}
           </h3>
           <p className="text-[12px] text-white/80 flex items-center gap-1 mt-0.5">
             <MapPin className="h-3 w-3" />
@@ -235,7 +235,7 @@ export default function DiscoverPage() {
 
   const highCompatibility = filteredUsers.filter(({ score }) => score >= 80);
   const onlineUsers = filteredUsers.filter(({ user }) => user.isOnline);
-  const newUsers = filteredUsers.filter(({ user }) => parseInt(user.id) > 100);
+  const newUsers: typeof filteredUsers = [];
   const recommendations = filteredUsers.slice(0, 6);
   const restUsers = filteredUsers.slice(6);
 
@@ -380,7 +380,11 @@ export default function DiscoverPage() {
               ))}
             </div>
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Switch id="disc-photo" checked={filterWithPhoto} onCheckedChange={setFilterWithPhoto} />
+              <Label htmlFor="disc-photo" className="text-[12px]">С фото</Label>
+            </div>
             <div className="flex items-center gap-2">
               <Switch id="disc-online" checked={filterOnline} onCheckedChange={setFilterOnline} />
               <Label htmlFor="disc-online" className="text-[12px]">Онлайн</Label>
