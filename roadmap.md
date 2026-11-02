@@ -10,6 +10,7 @@
 - [ ] Desktop/mobile regression checks and factual final report.
 
 ## Current verification
+- AI Wingman, dating assistant and avatar context are now capped and validated; deployed endpoints return 400 for authenticated malformed payloads. Dating assistant checks membership when a conversation ID is supplied. Full authorized context loading, atomic moderation/audit, production measurements and mobile acceptance remain open.
 - 2026-11-01: Discover now loads eligible real profiles in 48-row pages, excludes persisted likes/passes/blocks, applies the photo filter, and no longer invents mutual matches or trust/mood sections. Profiles distinguish load errors, show author-scoped posts and gallery, check upload-save errors, and remove mock fallback/friend requests.
 - AI assistant and fraud endpoints deployed and verified: anonymous requests return 401; authenticated malformed payloads return 400. Fraud identity comes from verified token; message previews removed from audit writes.
 - Ten routes rechecked after changes: no page exceptions or error fallback. This is opening-only evidence; not populated messenger, payment, moderation or Core Web Vitals acceptance.
